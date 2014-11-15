@@ -1,0 +1,174 @@
+#!/bin/bash
+
+# omxplayer script that enables using a base arch install for portable Raspberry Pi player for all omxplayer
+#	supports like mp3 mp4 aac wav flac ogg ... with optional video output or only sound .mkv .avi etc. :)
+# IT AUTOSTARTS AS A SERVICE DOES NOT NEED LOGIN, STREAMS DIRECTLY FROM THE CATACOMBES OF THE KERNEL :)
+# ver 1.0 working fine with no extras
+
+# Of great help for corrections was mc with edit F4 - selected 2 nano, it has red color for mistakes, comments
+# Thank you the autor of the original script that I forked, I also modified the GPIO scripts a bit:
+# bassplay front-end for GPIO button control
+# version 1.1 LED control implemented
+
+
+# GPIO11 - play
+# GPIO9 - stop
+# GPIO10 - next song
+# GPIO22 - previous song
+
+# GPIO02 - player ready
+# GPIO03 - play led
+# GPIO04 - stop led
+# GPIO17 - unused | I chose to power off with this pin used as imput
+
+# I chose to consider the imput pins pressed if they are lifted to 3.3 v as a Raspberry PI with nothing
+# connected to its GPIO sees them always grounded and this script overloads when all pins are pressed :)
+
+PLAYERBIN="/usr/bin/omxplayer.bin" # binary file of the player, in arch it ends with .bin -- any cli player
+PLAYLIST_SAVED_FILE="/root/saved"
+SONGFILE=""	# path to the song to be played
+START_PLAYER="true"   # defines whether process of player's start should be started (not desirable if runs already)
+PATH_MOD="/root/music"
+PLAYLIST="/tmp/playlist"
+PLAYLIST_RECENT_LINE=$[$(cat "$PLAYLIST_SAVED_FILE")]
+PLAYLIST_LASTLINE="0"
+
+start_play ()
+{
+
+"$PLAYERBIN" "$PATH_MOD"/"$SONGFILE" &
+echo "$PLAYLIST_RECENT_LINE" > "$PLAYLIST_SAVED_FILE"
+
+}
+
+stop_play ()
+
+{
+
+killall "$PLAYERBIN"
+sleep 0.3
+
+}
+
+turn_off_rpi ()
+
+{
+
+poweroff
+
+}
+
+playlist_next ()
+
+{
+
+# Check if the loaded song number is larger than the new total number of songs (songs deleted or changed in folder)
+# and set it to be tha number of the last song in the new list. It can happen on the fly if /root/saved is echoed.
+if [ "$PLAYLIST_RECENT_LINE" -gt  "$PLAYLIST_LASTLINE" ]
+then
+PLAYLIST_RECENT_LINE=$PLAYLIST_LASTLINE
+fi
+
+if [ "$PLAYLIST_RECENT_LINE" -eq  "$PLAYLIST_LASTLINE" ]
+then
+PLAYLIST_RECENT_LINE="1"
+else
+PLAYLIST_RECENT_LINE=$((PLAYLIST_RECENT_LINE+1))
+fi
+
+}
+
+playlist_previous ()
+
+{
+
+if [ "$PLAYLIST_RECENT_LINE" -eq  1 ]
+then
+PLAYLIST_RECENT_LINE="$PLAYLIST_LASTLINE"  # if the playlist is on begining, then jump in the last line (end)
+else
+PLAYLIST_RECENT_LINE=$((PLAYLIST_RECENT_LINE-1)) # previous song (line in the list)
+fi
+
+}
+
+output_pins_init ()
+
+{
+
+gpout.sh 2 0
+gpout.sh 3 0
+gpout.sh 4 0
+gpout.sh 17 0
+
+}
+
+### Runs once in the beginning without loop:
+
+# W A R N I N G ! ! ! Uncommenting the next line deactivates the USB/LAN chip for double battery life:
+
+#echo 0x0 > /sys/devices/platform/bcm2708_usb/buspower
+
+# This is not uncommented by default because keyboard does not work and IMHO:
+# - using model A that does not have it
+# - not using battery
+# - doing something else in parallel, including lxde and this would be like radio or streaming service
+# - install mistakes in the beginning that need fixing like:
+#	-configuring internet, for pppoe you need this offline packages with pacman -U package in name order:
+#		libnl libpcap ppp rp-pppoe
+#	-installing omxplayer to play, pcmisc to enable killall, alsa-utils to enable sound and use alsamixer
+#	-realising at some point that the volume needs adjusting with alsamixer
+#	-run "systemctl enable bshplyr.service" if it does not start by default at boot
+# To reactivate from a script or another assingned GPIO pin, here only for reference, wrap it around first:
+#echo 0x1 > /sys/devices/platform/bcm2708_usb/buspower
+
+sleep 2 # let systemd finish it's threads, maybe GPIO or bash crashes if this script begins heavy work to soon
+
+### [ INIT OF OUTPUT PINS (LEDS) ###
+output_pins_init
+
+#### [ PLAYLIST ] ####
+ls -1 "$PATH_MOD" > "$PLAYLIST" #creates playlist
+PLAYLIST_LASTLINE=`cat "$PLAYLIST" | wc -l` #defines its last line (song) to start over when reaches end
+# Check if the song number in /root/saved was empty, or the file was missing and make it 1 if not found
+if [ "$PLAYLIST_RECENT_LINE" -eq "" ]
+then
+PLAYLIST_RECENT_LINE="1"
+fi
+
+### [ LED READY SET ON ] ###
+
+gpout.sh 2 1
+
+#### [ CONTROL ] ####
+while true     # infinite loop reading/listing playlist
+do
+
+SONGFILE=`cat "$PLAYLIST" | sed -n "$PLAYLIST_RECENT_LINE"p` # process filename located on particular line
+	#infinite loop to read pin values and execute/stop player
+	# play/stop loop
+	while true 
+	do
+	# START
+	[ "`gpin.sh 11`" = "1" ] && START_PLAYER="true" # if set then player will be started
+	if "$START_PLAYER" 
+	then  start_play && gpout.sh 3 1 &&  gpout.sh 4 0 # start player , enable play led disable stop led
+	sleep 0.3	# delay to avoid driver crash if invocated too early after being stopped
+	START_PLAYER="false" # new song is being played - returning value in false
+	fi
+	#STOP
+	[ "`gpin.sh 9`" = "1" ] && stop_play && sleep 0.3 &&  gpout.sh 4 1 && gpout.sh 3 0  # stop player , disable play led enable stop led
+	#NEXT SONG BECAUSE OF GPIO
+	[ "`gpin.sh 10`" = "1" ] && stop_play && sleep 0.3 && START_PLAYER="true" && playlist_next && break  # next song -  kills player and exits play/stop loop 
+	#NEXT SONG BECAUSE OF PLAYER FINISHING SONG
+	sleep 0.3 # asta e o comanda mai grea si trebuie rulata mai rar
+	ps -ef | grep -v grep | grep "omxplayer.bin" > dev/null
+	if [ $? -ne 0 ]; then
+	sleep 1 && START_PLAYER="true" && playlist_next && break  # next song -  kills player and exits play/stop loop
+	fi
+	[ "`gpin.sh 10`" = "1" ] && stop_play && sleep 0.3 && START_PLAYER="true" && playlist_next && break  # next song -  kills player and exits play/stop loop 
+	#PREVIOUS SONG
+	[ "`gpin.sh 22`" = "1" ] && stop_play && sleep 0.3 && START_PLAYER="true" && playlist_previous && break  # previous song -  kills player and exits play/stop loop
+	[ "`gpin.sh 17`" = "1" ] && stop_play && sync && sleep 2 && START_PLAYER="false" && turn_off_rpi
+	done
+
+done
