@@ -1,0 +1,36 @@
+#!/bin/bash
+#pacman -Syu
+#pacman -S psmisc alsa-utils
+#python2 and rpi.gpio not needed, script commands the kernel catacombs directly :)
+echo "1" > /root/saved
+mkdir /root/music
+# /root/music must contain music or movie files and no folders
+# The playlist is done at each boot by the script and tha last song is remembered
+cp bshplyr /usr/bin
+cp gpin.sh /usr/bin
+cp gpout.sh /usr/bin
+cp bshplyr.service /etc/systemd/system/multi-user.target.wants
+chmod 777 /usr/bin/bshplyr
+chmod 777 /usr/bin/gpin.sh
+chmod 777 /usr/bin/gpout.sh
+chmod 777 /etc/systemd/system/multi-user.target.wants/bshplyr.service
+# Move systemd-networkd.service and systemd-resolved.service to another folder to disable network
+##################################################################################
+# Take sdhc card to abother computer, sudo copy music to mounted/root/music, put back in your
+# Raspberry PI and only plug your stereo headphone/speaker jack and power, with at least
+# GPIO pin 17 ready to pull to 3.3v with 10kohm for shutting down safely
+# To improve sound quality:
+# a) buy sound card i2c, avoid USB as it reduces battery life when portable twice
+# b) put electrolithic capacitor of about 1000 microfarads on 3.3v rail - reduces noise a lot
+# c) use HDMI sound and add the hdmi options in the play function of the script
+# From Dave Akerman:
+# To use portable with battery 6v to 12 v dischargeable to 4,5 v:
+#  -cut pins to 3.3 v regulator
+#  -with soldering iron remove the 3.3v regulator from its biggest last pad
+#  -connect big pad with right down pad -- 5 v becomes 3.3 v, some devices may not work
+#  -from the regulator connect right down pin with big pad, making sure that regulator big pad is free
+#  -connect positive from battery to left down pin of the regulator
+#  -connect the big pad of the regulator which is free to TP2 ground
+#  -connect minus from battery to TP2 ground
+# Four 1.2 AAA batteries provide 3 hours when fully charged, 6 if you disable USB/LAN chip
+# Or something like that...
