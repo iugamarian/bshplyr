@@ -1,0 +1,95 @@
+#!/bin/bash
+
+PLAYERBIN="/usr/bin/omxplayer.bin"
+PLAYLIST_SAVED_FILE="/root/saved"
+SONGFILE=""	# path to the song to be played
+START_PLAYER="false"
+PATH_MOD="/root/music"
+PLAYLIST="/tmp/playlist"
+PLAYLIST_RECENT_LINE=$[$(cat "$PLAYLIST_SAVED_FILE")]
+PLAYLIST_LASTLINE="0"
+
+test_player ()
+
+{
+
+	/usr/bin/sleep 1
+	ps -ef | grep -v grep | grep "omxplayer.bin" > dev/null
+	if [ $? -ne 0 ]; then
+	START_PLAYER="true"
+	else
+	START_PLAYER="false" 
+	fi
+
+}
+
+#### [ BOOTING ] ####
+
+/usr/bin/sleep 2
+
+#### [ BATTERY ] ####
+
+echo 0x0 > /sys/devices/platform/bcm2708_usb/buspower
+
+#### [ PLAYLIST ] ####
+
+ls -1 "$PATH_MOD" > "$PLAYLIST"
+PLAYLIST_LASTLINE=`cat "$PLAYLIST" | wc -l`
+
+#### [ SAVE MISSING ] ####
+
+if [ "$PLAYLIST_RECENT_LINE" -eq "" ]
+then
+PLAYLIST_RECENT_LINE="1"
+fi
+
+#### [ SAVE BIGGER ] ####
+
+if [ "$PLAYLIST_RECENT_LINE" -gt  "$PLAYLIST_LASTLINE" ]
+then
+PLAYLIST_RECENT_LINE="1"
+fi
+
+#### [ CONTROL LOOP ] ####
+
+while true
+do
+
+## [ FILE NAME ] ##
+
+	SONGFILE=`cat "$PLAYLIST" | sed -n "$PLAYLIST_RECENT_LINE"p` # process filename located on particular line
+
+## [ PLAYER ] ##
+
+	/usr/bin/sleep 1
+	"$PLAYERBIN" "$PATH_MOD"/"$SONGFILE"
+
+### [ TEST STARTED LOOP ] ###
+
+	while [ $START_PLAYER -eq "false" ] 
+	do
+		test_player
+	done
+
+### [ TEST STOPPED LOOP ] ###
+
+	while [ $START_PLAYER -eq "true" ] 
+	do
+		test_player
+	done
+
+## [ NEXT FILE ] ##
+
+	if [ "$PLAYLIST_RECENT_LINE" -eq  "$PLAYLIST_LASTLINE" ]
+	then
+	PLAYLIST_RECENT_LINE="1"
+	else
+	PLAYLIST_RECENT_LINE=$((PLAYLIST_RECENT_LINE+1))
+	fi
+
+## [ SAVE ] ##
+
+	echo "$PLAYLIST_RECENT_LINE" > "$PLAYLIST_SAVED_FILE"
+	sync
+
+done
