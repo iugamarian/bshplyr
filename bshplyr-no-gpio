@@ -14,7 +14,7 @@ test_player ()
 {
 
 	/usr/bin/sleep 1
-	ps -ef | grep -v grep | grep "omxplayer.bin" > dev/null
+	ps -ef | grep -v grep | grep -q "omxplayer.bin"
 	if [ $? -ne 0 ]; then
 	START_PLAYER="true"
 	else
