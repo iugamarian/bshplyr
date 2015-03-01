@@ -1,0 +1,160 @@
+#!/bin/bash
+
+# Destroyer mode - deletes song when next button
+
+PLAYERBIN="/usr/bin/omxplayer.bin"
+PLAYLIST_SAVED_FILE="/root/saved"
+SONGFILE=""	# path to the song to be played
+START_PLAYER="1"
+DETECT_PLAYER="0"
+PATH_MOD="/root/music"
+PLAYLIST="/tmp/playlist"
+PLAYLIST_RECENT_LINE=$[$(cat "$PLAYLIST_SAVED_FILE")]
+PLAYLIST_LASTLINE="0"
+NEXT_BUTTON_ADRESS="0"
+NEXT_BUTTON_RELEASED="1"
+
+# Using gpio command installed when installing WiringPi library, linking it
+gpio mode $NEXT_BUTTON_ADRESS in
+
+generate_playlist ()
+
+{
+
+ls -1 "$PATH_MOD" > "$PLAYLIST"
+PLAYLIST_LASTLINE=`cat "$PLAYLIST" | wc -l`
+# Avoid a saved song number larger than the number of songs
+if [ "$PLAYLIST_RECENT_LINE" -gt  "$PLAYLIST_LASTLINE" ]
+then
+PLAYLIST_RECENT_LINE="1"
+fi
+
+}
+
+
+test_player ()
+
+{
+
+	ps -ef | grep -v grep | grep -q "omxplayer.bin"
+	if [ $? -ne 0 ]
+	then
+	DETECT_PLAYER="0"
+	else
+	DETECT_PLAYER="1" 
+	fi
+
+}
+
+
+next_song ()
+
+{
+
+	if [ "$PLAYLIST_RECENT_LINE" -eq  "$PLAYLIST_LASTLINE" ]
+	then
+	PLAYLIST_RECENT_LINE="1"
+	else
+	PLAYLIST_RECENT_LINE=$((PLAYLIST_RECENT_LINE+1))
+	fi
+	START_PLAYER="1"
+	# Save playlist position
+	echo "$PLAYLIST_RECENT_LINE" > "$PLAYLIST_SAVED_FILE"
+	sync
+
+}
+
+
+delete_song ()
+
+{
+
+	espeak -p 0 -v ro "melodie stearsă"
+	rm "$PATH_MOD"/"$SONGFILE"
+	# Decrease song number by one so that next_song will use the same song number
+	if [ "$PLAYLIST_RECENT_LINE" -eq  "1" ]
+	then
+	PLAYLIST_RECENT_LINE="$PLAYLIST_LASTLINE"
+	else
+	PLAYLIST_RECENT_LINE=$((PLAYLIST_RECENT_LINE-1))
+	fi
+
+}
+
+
+#### [ BOOTING ] ####
+
+/usr/bin/sleep 7
+
+#### [ BATTERY ] ####
+
+#echo 0x0 > /sys/devices/platform/bcm2708_usb/buspower
+
+#### [ PLAYLIST ] ####
+
+generate_playlist
+# Will also be called after a song delete
+
+#### [ SYNC DATA TO PROTECT AGAINST CORRUPTION FROM POWER LOSS ] ####
+
+sync
+
+#### [ CONTROL LOOP ] ####
+
+while true
+do
+
+## [ FILE NAME ] ##
+
+	SONGFILE=`cat "$PLAYLIST" | sed -n "$PLAYLIST_RECENT_LINE"p` # process filename located on particular line
+
+## [ START THE PLAYER ] ##
+
+        if [ $START_PLAYER -eq "1" ]
+	then
+	# Wait half a second before beginning of the song
+	/usr/bin/sleep 0.5
+	"$PLAYERBIN" "$PATH_MOD"/"$SONGFILE" &
+	#Wait half a second after the song's end
+	/usr/bin/sleep 0.5
+	# When a command is followed by " &" it means that the script continues without waiting for it to finish
+	fi
+
+## [ DETECT NEXT BUTTON WAS RELEASED AND IS PRESSED ---->>>  STOP PLAYER  ---->>>>  DELETE THE UNWANTED SONG ] ##
+
+	if [ `gpio read "$NEXT_BUTTON_ADRRESS"` = 0 ] && [ $NEXT_BUTTON_RELEASED -eq "1" ]
+	then
+	# Wait for the GPIO driver to rest
+	/usr/bin/sleep 0.1
+	# Killing the player like a song ending will allow a next song
+	killall $PLAYERBIN
+	# Deleting song after the player is not playing it
+	delete_song
+	# Wait for the file system to acknowledge the deletion
+	/usr/bin/sleep 0.1
+	# Generating playlist after the song is deleted
+	generate_playlist
+	# Don't allow a new next button press until released
+	NEXT_BUTTON_RELEASED="0"
+	fi
+
+## [ DETECT NEXT BUTTON RELEASED ---->>>> ALLOW A NEW NEXT BUTTON TO BE PRESSED ] ##
+
+	if [ `gpio read "$NEXT_BUTTON_ADDRESS"` = 1 ]
+	then
+	# Wait for the GPIO driver to rest
+	/usr/bin/sleep 0.1
+	NEXT_BUTTON_RELEASED="1"
+	fi
+
+## [ DETECT PLAYER STOPPED  ---->>>>  NEXT SONG ] ##
+
+	test_player
+	if [ $DETECT_PLAYER -eq "0" ]
+	then
+	next_song
+	else
+	START_PLAYER="0"
+	fi
+
+done
