@@ -1,0 +1,130 @@
+#!/bin/bash
+
+PLAYERBIN="/usr/bin/omxplayer.bin"
+PLAYLIST_SAVED_FILE="/root/saved"
+NEXTPRESSED="/root/nextpressed"
+SONGFILE=""	# path to the song to be played
+START_PLAYER="1"
+DETECT_PLAYER="0"
+PATH_MOD="/root/music"
+PLAYLIST="/tmp/playlist"
+PLAYLIST_RECENT_LINE=$[$(cat "$PLAYLIST_SAVED_FILE")]
+PLAYLIST_LASTLINE="0"
+NEXT_BUTTON_ADRESS="0"
+NEXT_BUTTON_RELEASED="1"
+
+# Using gpio command installed when installing WiringPi library, linking it
+gpio mode $NEXT_BUTTON_ADRESS in
+
+test_player ()
+
+{
+
+	ps -ef | grep -v grep | grep -q "omxplayer.bin"
+	if [ $? -ne 0 ]
+	then
+	DETECT_PLAYER="0"
+	else
+	DETECT_PLAYER="1" 
+	fi
+
+}
+
+next_song ()
+
+{
+
+	if [ "$PLAYLIST_RECENT_LINE" -eq  "$PLAYLIST_LASTLINE" ]
+	then
+	PLAYLIST_RECENT_LINE="1"
+	else
+	PLAYLIST_RECENT_LINE=$((PLAYLIST_RECENT_LINE+1))
+	fi
+
+}
+
+#### [ BOOTING ] ####
+
+/usr/bin/sleep 7
+
+#### [ BATTERY ] ####
+
+#echo 0x0 > /sys/devices/platform/bcm2708_usb/buspower
+
+#### [ PLAYLIST ] ####
+
+ls -1 "$PATH_MOD" > "$PLAYLIST"
+PLAYLIST_LASTLINE=`cat "$PLAYLIST" | wc -l`
+
+#### [ SAVE BIGGER ] ####
+
+if [ "$PLAYLIST_RECENT_LINE" -gt  "$PLAYLIST_LASTLINE" ]
+then
+PLAYLIST_RECENT_LINE="1"
+fi
+
+#### [ SYNC DATA TO PROTECT AGAINST CORRUPTION FROM POWER LOSS ] ####
+
+sync
+
+#### [ CONTROL LOOP ] ####
+
+while true
+do
+
+## [ FILE NAME ] ##
+
+	SONGFILE=`cat "$PLAYLIST" | sed -n "$PLAYLIST_RECENT_LINE"p` # process filename located on particular line
+
+## [ START THE PLAYER ] ##
+
+        if [ $START_PLAYER -eq "1" ]
+	then
+	# Wait half a second before beginning of the song
+	/usr/bin/sleep 0.5
+	"$PLAYERBIN" "$PATH_MOD"/"$SONGFILE" &
+	#Wait half a second after the song's end
+	/usr/bin/sleep 0.5
+	# When a command is followed by " &" it means that the script continues without waiting for it to finish
+	fi
+
+## [ DETECT NEXT BUTTON WAS RELEASED AND IS PRESSED ---->>>  STOP PLAYER  ---->>>>  REPORT THE UNWANTED SONG ] ##
+
+	if [ `gpio read "$NEXT_BUTTON_ADRRESS"` = 0 ] && [ $NEXT_BUTTON_RELEASED -eq "1" ]
+	then
+	# Wait for the GPIO driver to rest
+	/usr/bin/sleep 0.1
+	killall $PLAYERBIN
+	echo "$SONGFILE" >> "$NEXTPRESSED"
+	# Don't allow a new next button press until released
+	NEXT_BUTTON_RELEASED="0"
+	fi
+
+## [ DETECT NEXT BUTTON RELEASED ---->>>> ALLOW A NEW NEXT BUTTON TO BE PRESSED ] ##
+
+	if [ `gpio read "$NEXT_BUTTON_ADDRESS"` = 1 ]
+	then
+	# Wait for the GPIO driver to rest
+	/usr/bin/sleep 0.1
+	NEXT_BUTTON_RELEASED="1"
+	fi
+
+## [ DETECT PLAYER STOPPED  ---->>>>  NEXT SONG ] ##
+
+	test_player
+	if [ $DETECT_PLAYER -eq "0" ]
+	then
+	next_song
+	START_PLAYER="1"
+	# Save playlist position
+	echo "$PLAYLIST_RECENT_LINE" > "$PLAYLIST_SAVED_FILE"
+	sync
+	else
+	START_PLAYER="0"
+	fi
+
+## [ WAIT TIME FOR RELEASING CPU RESOURCES ] ##
+
+	/usr/bin/sleep 0.1
+
+done
