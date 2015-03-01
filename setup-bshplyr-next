@@ -15,7 +15,7 @@
 ### wiringpi - use "gpio" to sense pressing the delete button
 ### This are the commands to install them:
 pacman -Syu
-pacman -S alsa-utils psmisc wiringpi espeak
+pacman -S alsa-utils psmisc wiringpi omxplayer
 ### Create files and folders:
 echo "1" > /root/saved
 echo "Next:" > /root/nextpressed
