@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Destroyer mode - deletes song when next button
+# Song destroyer mode - deletes song when next button pressed
 
 PLAYERBIN="/usr/bin/omxplayer.bin"
 PLAYLIST_SAVED_FILE="/root/saved"
@@ -8,7 +8,7 @@ SONGFILE=""	# path to the song to be played
 START_PLAYER="1"
 DETECT_PLAYER="0"
 PATH_MOD="/root/music"
-PLAYLIST="/tmp/playlist"
+PLAYLIST="/tmp/playlist" # /tmp on Arch is not always a tmpfs so do few writes
 PLAYLIST_RECENT_LINE=$[$(cat "$PLAYLIST_SAVED_FILE")]
 PLAYLIST_LASTLINE="0"
 NEXT_BUTTON_ADRESS="0"
@@ -21,6 +21,7 @@ generate_playlist ()
 
 {
 
+# /tmp on Arch is not always a tmpfs so do few writes (call this rarely)
 ls -1 "$PATH_MOD" > "$PLAYLIST"
 PLAYLIST_LASTLINE=`cat "$PLAYLIST" | wc -l`
 # Avoid a saved song number larger than the number of songs
@@ -57,10 +58,10 @@ next_song ()
 	else
 	PLAYLIST_RECENT_LINE=$((PLAYLIST_RECENT_LINE+1))
 	fi
+	# Will write changes to disk just before starting the player
 	START_PLAYER="1"
 	# Save playlist position
 	echo "$PLAYLIST_RECENT_LINE" > "$PLAYLIST_SAVED_FILE"
-	sync
 
 }
 
@@ -69,7 +70,8 @@ delete_song ()
 
 {
 
-	espeak -p 0 -v ro "melodie stearsă"
+	espeak -p 0 "song deleted"
+	/usr/bin/sleep 0.2
 	rm "$PATH_MOD"/"$SONGFILE"
 	# Decrease song number by one so that next_song will use the same song number
 	if [ "$PLAYLIST_RECENT_LINE" -eq  "1" ]
@@ -92,50 +94,32 @@ delete_song ()
 
 #### [ PLAYLIST ] ####
 
+# This will also be called after a song delete
 generate_playlist
-# Will also be called after a song delete
+
 
 #### [ SYNC DATA TO PROTECT AGAINST CORRUPTION FROM POWER LOSS ] ####
 
+# This is saving all changes done to disk by the systemd boot process
 sync
 
-#### [ CONTROL LOOP ] ####
+#### [ CONTROL LOOP THAT REPEATS INFINETLY ] ####
 
 while true
 do
 
-## [ FILE NAME ] ##
-
-	SONGFILE=`cat "$PLAYLIST" | sed -n "$PLAYLIST_RECENT_LINE"p` # process filename located on particular line
-
 ## [ START THE PLAYER ] ##
 
-        if [ $START_PLAYER -eq "1" ]
+	if [ $START_PLAYER -eq "1" ]
 	then
-	# Wait half a second before beginning of the song
+	# Determine the song by wanted line in the playlist (path and filename)
+	SONGFILE=`cat "$PLAYLIST" | sed -n "$PLAYLIST_RECENT_LINE"p`
+	# Write all changes to disk (before starting the player)
 	/usr/bin/sleep 0.5
+	sync
+	/usr/bin/sleep 0.5
+	# Starting the player, when " &" at the end, the script continues without waiting to finish
 	"$PLAYERBIN" "$PATH_MOD"/"$SONGFILE" &
-	#Wait half a second after the song's end
-	/usr/bin/sleep 0.5
-	# When a command is followed by " &" it means that the script continues without waiting for it to finish
-	fi
-
-## [ DETECT NEXT BUTTON WAS RELEASED AND IS PRESSED ---->>>  STOP PLAYER  ---->>>>  DELETE THE UNWANTED SONG ] ##
-
-	if [ `gpio read "$NEXT_BUTTON_ADRRESS"` = 0 ] && [ $NEXT_BUTTON_RELEASED -eq "1" ]
-	then
-	# Wait for the GPIO driver to rest
-	/usr/bin/sleep 0.1
-	# Killing the player like a song ending will allow a next song
-	killall $PLAYERBIN
-	# Deleting song after the player is not playing it
-	delete_song
-	# Wait for the file system to acknowledge the deletion
-	/usr/bin/sleep 0.1
-	# Generating playlist after the song is deleted
-	generate_playlist
-	# Don't allow a new next button press until released
-	NEXT_BUTTON_RELEASED="0"
 	fi
 
 ## [ DETECT NEXT BUTTON RELEASED ---->>>> ALLOW A NEW NEXT BUTTON TO BE PRESSED ] ##
@@ -143,11 +127,43 @@ do
 	if [ `gpio read "$NEXT_BUTTON_ADDRESS"` = 1 ]
 	then
 	# Wait for the GPIO driver to rest
-	/usr/bin/sleep 0.1
-	NEXT_BUTTON_RELEASED="1"
+	/usr/bin/sleep 0.2
+	# Test again to make sure it is not noise
+		if [ `gpio read "$NEXT_BUTTON_ADDRESS"` = 1 ]
+		then
+		# Wait for the GPIO driver to rest
+		/usr/bin/sleep 0.2
+		NEXT_BUTTON_RELEASED="1"
+		fi
 	fi
 
-## [ DETECT PLAYER STOPPED  ---->>>>  NEXT SONG ] ##
+## [ DETECT NEXT BUTTON WAS RELEASED AND IS PRESSED ---->>>  STOP PLAYER  ---->>>>  DELETE THE UNWANTED SONG ] ##
+
+	if [ $NEXT_BUTTON_RELEASED -eq "1" ] && [ `gpio read "$NEXT_BUTTON_ADRRESS"` = 0 ]
+	then
+	# Wait for the GPIO driver to rest
+	/usr/bin/sleep 0.2
+	# Test again to make sure it is not noise (already checked released)
+		if [ `gpio read "$NEXT_BUTTON_ADRRESS"` = 0 ]
+		then
+		# Wait for the GPIO driver to rest
+		/usr/bin/sleep 0.2
+		# Killing the player like a song ending will allow a next song
+		killall $PLAYERBIN
+		# Deleting song after the player is not playing it
+		# Wait for the file system to be released after the player has been killed
+		/usr/bin/sleep 0.2
+		delete_song
+		# Wait for the file system to acknowledge the deletion
+		/usr/bin/sleep 0.2
+		# Generating playlist again after the song is deleted
+		generate_playlist
+		# Don't allow a new next button press until released
+		NEXT_BUTTON_RELEASED="0"
+		fi
+	fi
+
+## [ DETECT PLAYER STOPPED (song end or killed by delete) ---->>>>  NEXT SONG ] ##
 
 	test_player
 	if [ $DETECT_PLAYER -eq "0" ]
@@ -156,5 +172,10 @@ do
 	else
 	START_PLAYER="0"
 	fi
+
+## [ GO SLOWER THROUGH THE INFINITE LOOP IF NO CHANGES ] ##
+
+	# But be fast enough to sense the button and player responsively
+	/usr/bin/sleep 0.2
 
 done
