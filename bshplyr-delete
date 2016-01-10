@@ -74,7 +74,7 @@ delete_song ()
 
 {
 
-	espeak -p 0 "The song is being deleted."
+	espeak -a 600 -p 0 "The song is being deleted."
 	/usr/bin/sleep 0.1
 	rm "$PATH_MOD"/"$SONGFILE"
 	# Decrease song number by one so that next_song will use the same song number
@@ -197,7 +197,7 @@ do
 		killall $PLAYERBIN
 		# Wait for the file system to be released after the player has been killed
 		/usr/bin/sleep 0.1
-		espeak -p 0 "Going to the next song."
+		espeak -a 600 -p 0 "Going to the next song."
 		/usr/bin/sleep 0.1
 		# Don't allow a new next button press until released
 		NEXT_BUTTON_RELEASED="0"
