@@ -72,41 +72,49 @@ sync
 while true
 do
 
-## [ FILE NAME ] ##
-
-	SONGFILE=`cat "$PLAYLIST" | sed -n "$PLAYLIST_RECENT_LINE"p` # process filename located on particular line
-
 ## [ START THE PLAYER ] ##
 
         if [ $START_PLAYER -eq "1" ]
 	then
-	# Wait half a second before beginning of the song
+	# Process filename located on particular line in the list
+	SONGFILE=`cat "$PLAYLIST" | sed -n "$PLAYLIST_RECENT_LINE"p`
+	# Write all changes to disk
+	/usr/bin/sleep 0.5
+	sync
 	/usr/bin/sleep 0.5
 	"$PLAYERBIN" "$PATH_MOD"/"$SONGFILE" &
-	#Wait half a second after the song's end
-	/usr/bin/sleep 0.5
 	# When a command is followed by " &" it means that the script continues without waiting for it to finish
 	fi
 
 ## [ DETECT NEXT BUTTON WAS RELEASED AND IS PRESSED ---->>>  STOP PLAYER  ---->>>>  REPORT THE UNWANTED SONG ] ##
 
-	if [ `gpio read "$NEXT_BUTTON_ADRRESS"` = 0 ] && [ $NEXT_BUTTON_RELEASED -eq "1" ]
+	if [ $NEXT_BUTTON_RELEASED -eq "1" ] && [ `gpio read "$NEXT_BUTTON_ADRRESS"` = 0 ]
 	then
-	# Wait for the GPIO driver to rest
-	/usr/bin/sleep 0.1
-	killall $PLAYERBIN
-	echo "$SONGFILE" >> "$NEXTPRESSED"
-	# Don't allow a new next button press until released
-	NEXT_BUTTON_RELEASED="0"
+	/usr/bin/sleep 0.2
+	# Test again to make sure it's not noise (already checked released)
+		if [ `gpio read "$NEXT_BUTTON_ADRRESS"` = 0 ]
+		then
+		# Wait for the GPIO driver to rest
+		/usr/bin/sleep 0.2
+		killall $PLAYERBIN
+		echo "$SONGFILE" >> "$NEXTPRESSED"
+		# Don't allow a new next button press until released
+		NEXT_BUTTON_RELEASED="0"
+		fi
 	fi
 
 ## [ DETECT NEXT BUTTON RELEASED ---->>>> ALLOW A NEW NEXT BUTTON TO BE PRESSED ] ##
 
 	if [ `gpio read "$NEXT_BUTTON_ADDRESS"` = 1 ]
 	then
-	# Wait for the GPIO driver to rest
-	/usr/bin/sleep 0.1
-	NEXT_BUTTON_RELEASED="1"
+	/usr/bin/sleep 0.2
+	# Test again to make sure it's not noise
+		if [ `gpio read "$NEXT_BUTTON_ADDRESS"` = 1 ]
+		then
+		# Wait for the GPIO driver to rest
+		/usr/bin/sleep 0.2
+		NEXT_BUTTON_RELEASED="1"
+		fi
 	fi
 
 ## [ DETECT PLAYER STOPPED  ---->>>>  NEXT SONG ] ##
@@ -118,13 +126,13 @@ do
 	START_PLAYER="1"
 	# Save playlist position
 	echo "$PLAYLIST_RECENT_LINE" > "$PLAYLIST_SAVED_FILE"
-	sync
 	else
+	# Will write changes to disk just before starting the player
 	START_PLAYER="0"
 	fi
 
 ## [ WAIT TIME FOR RELEASING CPU RESOURCES ] ##
 
-	/usr/bin/sleep 0.1
+	/usr/bin/sleep 0.2
 
 done
