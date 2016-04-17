@@ -2,12 +2,14 @@
 
 # Song destroyer mode - deletes song when next button pressed
 
+#PLAYERBIN="/usr/bin/omxplayer"
 PLAYERBIN="/usr/bin/omxplayer.bin"
 PLAYLIST_SAVED_FILE="/root/saved"
 SONGFILE=""	# path to the song to be played
 START_PLAYER="1"
 DETECT_PLAYER="0"
-PATH_MOD="/root/music"
+#PATH_MOD="/500gbdate/pi/celtic-dance-by-riverdance-mp3/"
+PATH_MOD="/root/music/"
 PLAYLIST="/tmp/playlist" # /tmp on Arch is not always a tmpfs so do few writes
 PLAYLIST_RECENT_LINE=$[$(cat "$PLAYLIST_SAVED_FILE")]
 PLAYLIST_LASTLINE="0"
@@ -26,7 +28,13 @@ generate_playlist ()
 {
 
 # /tmp on Arch is not always a tmpfs so do few writes (call this rarely)
-ls -1 "$PATH_MOD" > "$PLAYLIST"
+rm "$PLAYLIST"
+find "$PATH_MOD" -iname "*.wav" -exec echo {} >> "$PLAYLIST" \;
+find "$PATH_MOD" -iname "*.flac" -exec echo {} >> "$PLAYLIST" \;
+find "$PATH_MOD" -iname "*.mp3" -exec echo {} >> "$PLAYLIST" \;
+find "$PATH_MOD" -iname "*.ogg" -exec echo {} >> "$PLAYLIST" \;
+find "$PATH_MOD" -iname "*.mp4" -exec echo {} >> "$PLAYLIST" \;
+#ls -1 "$PATH_MOD" > "$PLAYLIST"
 PLAYLIST_LASTLINE=`cat "$PLAYLIST" | wc -l`
 # Avoid a saved song number larger than the number of songs
 if [ "$PLAYLIST_RECENT_LINE" -gt  "$PLAYLIST_LASTLINE" ]
@@ -76,7 +84,7 @@ delete_song ()
 
 	espeak -a 600 -p 0 "The song is being deleted."
 	/usr/bin/sleep 0.1
-	rm "$PATH_MOD"/"$SONGFILE"
+#	rm "$SONGFILE"
 	# Decrease song number by one so that next_song will use the same song number
 	if [ "$PLAYLIST_RECENT_LINE" -eq  "1" ]
 	then
@@ -119,11 +127,11 @@ do
 	# Determine the song by wanted line in the playlist (path and filename)
 	SONGFILE=`cat "$PLAYLIST" | sed -n "$PLAYLIST_RECENT_LINE"p`
 	# Write all changes to disk (before starting the player)
-	/usr/bin/sleep 0.5
+	/usr/bin/sleep 0.2
 	sync
-	/usr/bin/sleep 0.5
+	/usr/bin/sleep 0.2
 	# Starting the player, when " &" at the end, the script continues without waiting to finish
-	"$PLAYERBIN" "$PATH_MOD"/"$SONGFILE" &
+	"$PLAYERBIN" "$SONGFILE" &
 	fi
 
 ## [ DETECT DELETE BUTTON RELEASED ---->>>> ALLOW A NEW DELETE BUTTON TO BE PRESSED ] ##
