@@ -84,7 +84,7 @@ delete_song ()
 
 	espeak -a 600 -p 0 "The song is being deleted."
 	/usr/bin/sleep 0.1
-#	rm "$SONGFILE"
+	rm "$SONGFILE"
 	# Decrease song number by one so that next_song will use the same song number
 	if [ "$PLAYLIST_RECENT_LINE" -eq  "1" ]
 	then
