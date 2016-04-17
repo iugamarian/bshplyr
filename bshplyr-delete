@@ -35,12 +35,22 @@ find "$PATH_MOD" -iname "*.mp3" -exec echo {} >> "$PLAYLIST" \;
 find "$PATH_MOD" -iname "*.ogg" -exec echo {} >> "$PLAYLIST" \;
 find "$PATH_MOD" -iname "*.mp4" -exec echo {} >> "$PLAYLIST" \;
 #ls -1 "$PATH_MOD" > "$PLAYLIST"
-PLAYLIST_LASTLINE=`cat "$PLAYLIST" | wc -l`
+# Detect if music has been found, if not exit
+if [ -f "$PLAYLIST" ]
+then
+	PLAYLIST_LASTLINE=`cat "$PLAYLIST" | wc -l`
+        espeak -a 600 -p 0 "Found $PLAYLIST_LASTLINE songs."
+else
+        espeak -a 600 -p 0 "No songs found, exiting! No songs found, exiting!"
+        exit
+fi
 # Avoid a saved song number larger than the number of songs
 if [ "$PLAYLIST_RECENT_LINE" -gt  "$PLAYLIST_LASTLINE" ]
 then
 PLAYLIST_RECENT_LINE="1"
 fi
+
+espeak -a 600 -p 0 "Current song is $PLAYLIST_RECENT_LINE."
 
 }
 
