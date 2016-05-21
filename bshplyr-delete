@@ -39,7 +39,6 @@ find "$PATH_MOD" -iname "*.mp4" -exec echo {} >> "$PLAYLIST" \;
 if [ -f "$PLAYLIST" ]
 then
 	PLAYLIST_LASTLINE=`cat "$PLAYLIST" | wc -l`
-        espeak -a 600 -p 0 "Found $PLAYLIST_LASTLINE songs."
 else
         espeak -a 600 -p 0 "No songs found, exiting! No songs found, exiting!"
         exit
@@ -49,9 +48,6 @@ if [ "$PLAYLIST_RECENT_LINE" -gt  "$PLAYLIST_LASTLINE" ]
 then
 PLAYLIST_RECENT_LINE="1"
 fi
-
-espeak -a 600 -p 0 "Current song is $PLAYLIST_RECENT_LINE."
-
 }
 
 
@@ -108,9 +104,21 @@ delete_song ()
 
 #### [ BOOTING ] ####
 
-/usr/bin/sleep 7
+/usr/bin/sleep 3
 
-#### [ BATTERY ] ####
+# Check twice (be sure) to see if buttons are attached or have pull resistor up and exit if not
+if [ $DELETE_BUTTON_RELEASED -eq "1" ] && [ `gpio read $NEXT_BUTTON_ADRESS` = 1 ]
+then
+	/usr/bin/sleep 1
+	if [ $DELETE_BUTTON_RELEASED -eq "1" ] && [ `gpio read $NEXT_BUTTON_ADRESS` = 1 ]
+	then
+		espeak -a 600 -p 0 "Buttons are not attached or missing pull resistor up to 3.3 volts, exiting."
+		espeak -a 600 -p 0 "Buttons are not attached or missing pull resistor up to 3.3 volts, exiting."
+		exit
+	fi
+fi
+
+#### [ INCREASE BATTERY LIFE ] ####
 
 #echo 0x0 > /sys/devices/platform/bcm2708_usb/buspower
 
@@ -119,6 +127,8 @@ delete_song ()
 # This will also be called after a song delete
 generate_playlist
 
+# Only once at start specify status
+espeak -a 600 -p 0 "Found $PLAYLIST_LASTLINE songs, playing $PLAYLIST_RECENT_LINE."
 
 #### [ SYNC DATA TO PROTECT AGAINST CORRUPTION FROM POWER LOSS ] ####
 
