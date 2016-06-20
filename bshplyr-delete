@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Song destroyer mode - deletes song when next button pressed
+# Song destroyer mode - deletes song when delete button pressed
 
 #PLAYERBIN="/usr/bin/omxplayer"
 PLAYERBIN="/usr/bin/omxplayer.bin"
@@ -88,7 +88,7 @@ delete_song ()
 
 {
 
-	espeak -a 600 -p 0 "The song is being deleted."
+	espeak -a 600 -p 0 "Deleted."
 	/usr/bin/sleep 0.1
 	rm "$SONGFILE"
 	# Decrease song number by one so that next_song will use the same song number
@@ -107,10 +107,10 @@ delete_song ()
 /usr/bin/sleep 2
 
 # Check twice (be sure) to see if buttons are attached or have pull resistor up and exit if not
-if [  `gpio read $DELETE_BUTTON_ADDRESS` = 1  ] && [ `gpio read $NEXT_BUTTON_ADRESS` = 1 ]
+if [  `gpio read $DELETE_BUTTON_ADDRESS` = 0  ] || [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
 then
 	/usr/bin/sleep 1
-	if [ `gpio read $DELETE_BUTTON_ADDRESS` = 1 ] && [ `gpio read $NEXT_BUTTON_ADRESS` = 1 ]
+	if [ `gpio read $DELETE_BUTTON_ADDRESS` = 0 ] || [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
 	then
 		espeak -a 600 -p 0 "Buttons are not attached or missing pull resistor up to 3.3 volts, exiting."
 		espeak -a 600 -p 0 "Buttons are not attached or missing pull resistor up to 3.3 volts, exiting."
@@ -225,7 +225,7 @@ do
 		killall $PLAYERBIN
 		# Wait for the file system to be released after the player has been killed
 		/usr/bin/sleep 0.1
-		espeak -a 600 -p 0 "Going to the next song."
+		espeak -a 600 -p 0 "Next."
 		/usr/bin/sleep 0.1
 		# Don't allow a new next button press until released
 		NEXT_BUTTON_RELEASED="0"
