@@ -104,15 +104,16 @@ delete_song ()
 
 #### [ BOOTING ] ####
 
-/usr/bin/sleep 2
+/usr/bin/sleep 3
 
 # Check twice (be sure) to see if buttons are attached or have pull resistor up and exit if not
 if [  `gpio read $DELETE_BUTTON_ADDRESS` = 0  ] || [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
 then
-	/usr/bin/sleep 1
+	/usr/bin/sleep 0.5
 	if [ `gpio read $DELETE_BUTTON_ADDRESS` = 0 ] || [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
 	then
 		espeak -a 600 -p 0 "Buttons are not attached or missing pull resistor up to 3.3 volts, exiting."
+		/usr/bin/sleep 0.1
 		espeak -a 600 -p 0 "Buttons are not attached or missing pull resistor up to 3.3 volts, exiting."
 		exit
 	fi
@@ -133,7 +134,9 @@ espeak -a 600 -p 0 "Found $PLAYLIST_LASTLINE songs, playing $PLAYLIST_RECENT_LIN
 #### [ SYNC DATA TO PROTECT AGAINST CORRUPTION FROM POWER LOSS ] ####
 
 # This is saving all changes done to disk by the systemd boot process
-sync
+#/usr/bin/sleep 0.1
+#sync
+#/usr/bin/sleep 0.1
 
 #### [ CONTROL LOOP THAT REPEATS INFINETLY ] ####
 
@@ -147,10 +150,10 @@ do
 	# Determine the song by wanted line in the playlist (path and filename)
 	SONGFILE=`cat "$PLAYLIST" | sed -n "$PLAYLIST_RECENT_LINE"p`
 	# Write all changes to disk (before starting the player)
-	/usr/bin/sleep 0.2
+	/usr/bin/sleep 0.1
 	sync
-	/usr/bin/sleep 0.2
-	# Starting the player, when " &" at the end, the script continues without waiting to finish
+	/usr/bin/sleep 0.1
+	# Starting the player, when " &" at the end, the script continues without waiting to finish command to the left
 	"$PLAYERBIN" "$SONGFILE" &
 	fi
 
@@ -162,9 +165,9 @@ do
 	/usr/bin/sleep 0.1
 	# Test again to make sure it is not noise
 		if [ `gpio read $DELETE_BUTTON_ADRESS` = 1 ]
+		/usr/bin/sleep 0.1
 		then
 		# Wait for the GPIO driver to rest
-		/usr/bin/sleep 0.1
 		DELETE_BUTTON_RELEASED="1"
 		fi
 	fi
@@ -210,7 +213,7 @@ do
 		fi
 	fi
 
-## [ DETECT NEXT BUTTON WAS RELEASED AND IS PRESSED ---->>>  STOP PLAYER  ---->>>>  DELETE THE UNWANTED SONG ] ##
+## [ DETECT NEXT BUTTON WAS RELEASED AND IS PRESSED ---->>>  STOP PLAYER  ---->>>>  CURRENT SONG FINISHED SO NEXT ] ##
 
 	if [ $NEXT_BUTTON_RELEASED -eq "1" ] && [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
 	then
@@ -239,12 +242,13 @@ do
 	then
 	next_song
 	else
+	# Avoid if START_PLAYER="1" to be faster, repeatedly zero
 	START_PLAYER="0"
 	fi
 
 ## [ GO SLOWER THROUGH THE INFINITE LOOP IF NO CHANGES ] ##
 
-	# But be fast enough to sense the button and player responsively
+	# But be fast enough to sense the buttons and stopped player with snapiness
 	/usr/bin/sleep 0.1
 
 done
