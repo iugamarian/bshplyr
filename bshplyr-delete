@@ -165,9 +165,9 @@ do
 	/usr/bin/sleep 0.1
 	# Test again to make sure it is not noise
 		if [ `gpio read $DELETE_BUTTON_ADRESS` = 1 ]
-		/usr/bin/sleep 0.1
 		then
 		# Wait for the GPIO driver to rest
+		/usr/bin/sleep 0.1
 		DELETE_BUTTON_RELEASED="1"
 		fi
 	fi
