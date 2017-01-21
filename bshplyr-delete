@@ -18,10 +18,21 @@ DELETE_BUTTON_RELEASED="1"
 NEXT_BUTTON_ADRESS="1"
 NEXT_BUTTON_RELEASED="1"
 
+# WiringPi call of GPIO 0 is actually GPIO 17
+# WiringPi call of GPIO 1 is actually GPIO 18
 
 # Using gpio command installed when installing WiringPi library, linking it
+# http://wiringpi.com/the-gpio-utility/
 gpio mode $DELETE_BUTTON_ADRESS in
 gpio mode $NEXT_BUTTON_ADRESS in
+
+# Turn off pull down resistors on the two imputs (remains floating, use physical resistors to pull up)
+gpio mode $DELETE_BUTTON_ADRESS tri
+gpio mode $NEXT_BUTTON_ADRESS tri
+
+# Turn on pull up resistors on the two imputs (not as good as using physical 100k resistors)
+#gpio mode $DELETE_BUTTON_ADRESS up
+#gpio mode $NEXT_BUTTON_ADRESS up
 
 generate_playlist ()
 
@@ -102,24 +113,36 @@ delete_song ()
 }
 
 
-#### [ BOOTING ] ####
+#### [ BOOTING WITH SYSTEMD ] ####
 
-/usr/bin/sleep 3
+# Lite boot delay (no x server)
+usr/bin/sleep 1
 
-# Check twice (be sure) to see if buttons are attached or have pull resistor up and exit if not
-if [  `gpio read $DELETE_BUTTON_ADDRESS` = 0  ] || [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
+# Heavy boot delay (x server)
+#usr/bin/sleep 3
+
+# Check four times (detect possible unwanted noise) that pull up resistors for buttons work, exit if not
+if [ `gpio read $DELETE_BUTTON_ADDRESS` = 0  ] || [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
 then
-	/usr/bin/sleep 0.5
+	/usr/bin/sleep 0.1
 	if [ `gpio read $DELETE_BUTTON_ADDRESS` = 0 ] || [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
 	then
-		espeak -a 600 -p 0 "Buttons are not attached or missing pull resistor up to 3.3 volts, exiting."
 		/usr/bin/sleep 0.1
-		espeak -a 600 -p 0 "Buttons are not attached or missing pull resistor up to 3.3 volts, exiting."
-		exit
+		if [ `gpio read $DELETE_BUTTON_ADDRESS` = 0 ] || [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
+		then
+			/usr/bin/sleep 0.1
+			if [ `gpio read $DELETE_BUTTON_ADDRESS` = 0 ] || [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
+			then
+				espeak -a 600 -p 0 "Buttons pull uo resistors not working properly, exiting."
+				/usr/bin/sleep 0.1
+				espeak -a 600 -p 0 "Buttons pull uo resistors not working properly, exiting."
+			exit
+			fi
+		fi
 	fi
 fi
 
-#### [ INCREASE BATTERY LIFE ] ####
+#### [ INCREASE BATTERY LIFE FOR B MODEL, THIS DISABLES USB AND LAN CHIP ] ####
 
 #echo 0x0 > /sys/devices/platform/bcm2708_usb/buspower
 
