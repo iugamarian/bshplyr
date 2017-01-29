@@ -7,7 +7,7 @@ ConditionPathExists=/usr/bin/gpio
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/bshplyr-delete
+ExecStart=/usr/bin/bshplyr-delete-raspbian-lite
 
 [Install]
 WantedBy=multi-user.target
