@@ -16,4 +16,4 @@ killall needs omxplayer.bin instead of /usr/bin/omxplayer.bin
 
 
 # TODO:
-write the profram in c, still calling omxplayer
+write the program in c, still calling omxplayer
