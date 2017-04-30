@@ -62,7 +62,7 @@ exit
 
 3) Put SDCARD in
 
-4) Apply power, listen and delete or next, remove player, remembers last song played.
+4) Apply 5V power, listen and delete or next, remove 5V power, it remembers last song played.
 
 5) When you consider there is no more music to be deleted, make a backup of /root/music and rename the backup to selected-music-YY-MM-DD
 
