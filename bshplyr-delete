@@ -102,6 +102,9 @@ delete_song ()
 	espeak -a 600 -p 0 "Deleted."
 	/usr/bin/sleep 0.1
 	rm "$SONGFILE"
+	# http://www.yourownlinux.com/2015/04/sed-command-in-linux-delete-lines-from-file.html
+	# http://stackoverflow.com/questions/5171901/sed-command-find-and-replace-in-file-and-overwrite-file-doesnt-work-it-empties
+	sed -i "$PLAYLIST_RECENT_LINE d" $PLAYLIST
 	# Decrease song number by one so that next_song will use the same song number
 	if [ "$PLAYLIST_RECENT_LINE" -eq  "1" ]
 	then
@@ -214,8 +217,6 @@ do
 		delete_song
 		# Wait for the file system to acknowledge the deletion
 		/usr/bin/sleep 0.1
-		# Generating playlist again after the song is deleted
-		generate_playlist
 		# Don't allow a new delete button press until released
 		DELETE_BUTTON_RELEASED="0"
 		fi
