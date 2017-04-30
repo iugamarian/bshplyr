@@ -1,0 +1,25 @@
+#!/bin/bash
+PLAYLLL="$HOME/sedtestfile"
+echo ""
+echo "1x" > $PLAYLLL
+echo "2x" >> $PLAYLLL
+echo "3x" >> $PLAYLLL
+echo "4x" >> $PLAYLLL
+echo "5x" >> $PLAYLLL
+echo "Written the file $PLAYLLL :"
+cat $PLAYLLL
+echo ""
+echo "Want to delete line 4."
+PLLLINE="4"
+echo "Running sed."
+sed -i "$PLLLINE d" $PLAYLLL
+echo "After sed the file is:"
+cat $PLAYLLL
+echo ""
+echo "Want to delete line 2."
+PLLLINE="2"
+echo "Running sed."
+sed -i "$PLLLINE d" $PLAYLLL
+echo "After sed the file is:"
+cat $PLAYLLL
+echo ""
