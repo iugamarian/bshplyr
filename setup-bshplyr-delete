@@ -20,13 +20,13 @@ pacman -S alsa-utils psmisc wiringpi espeak omxplayer
 ### Create files and folders:
 echo "1" > /root/saved
 #echo "Next:" > /root/nextpressed
-# /root/music must contain music or movie files and no folders
+# /root/music must contain music or movie files in folders or no folders
 mkdir /root/music
 # The playlist is done at each boot by the script and the last song is remembered
 cp bshplyr-delete /usr/bin
 cp bshplyr-delete.service /etc/systemd/system/multi-user.target.wants
-chmod 777 /usr/bin/bshplyr-delete
-chmod 777 /etc/systemd/system/multi-user.target.wants/bshplyr-delete.service
+chmod 775 /usr/bin/bshplyr-delete
+chmod 775 /etc/systemd/system/multi-user.target.wants/bshplyr-delete.service
 # Move systemd-networkd.service and systemd-resolved.service to another folder to disable network
 ##################################################################################
 # Take sdhc card to abother computer, sudo copy music to mounted /root/music, put back in your
