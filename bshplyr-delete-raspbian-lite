@@ -120,10 +120,10 @@ delete_song ()
 #### [ BOOTING WITH SYSTEMD ] ####
 
 # Lite boot delay (no x server)
-usr/bin/sleep 3
+/usr/bin/sleep 3
 
 # Heavy boot delay (x server)
-#usr/bin/sleep 5
+#/usr/bin/sleep 5
 
 # Check four times (detect possible unwanted noise) that pull up resistors for buttons work, exit if not
 if [ `gpio read $DELETE_BUTTON_ADDRESS` = 0  ] || [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
@@ -151,6 +151,9 @@ fi
 #echo 0x0 > /sys/devices/platform/bcm2708_usb/buspower
 
 #### [ PLAYLIST ] ####
+
+# Uncomment if using a USB stick or card in USB adapter
+#mount /dev/sda1 /root/music
 
 # This will also be called after a song delete
 generate_playlist
