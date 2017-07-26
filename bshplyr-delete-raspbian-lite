@@ -184,7 +184,8 @@ do
 	sync
 	/usr/bin/sleep 0.1
 	# Starting the player, when " &" at the end, the script continues without waiting to finish command to the left
-	"$PLAYERBIN" "$SONGFILE" &
+	"$PLAYERBIN" --vol=-1000 "$SONGFILE" &
+	# --vol=-1000 reduces volume to aproximately 90%, required for bass not to go over in sound adapter
 	fi
 
 ## [ DETECT DELETE BUTTON RELEASED ---->>>> ALLOW A NEW DELETE BUTTON TO BE PRESSED ] ##
