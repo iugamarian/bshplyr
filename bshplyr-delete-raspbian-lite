@@ -89,7 +89,7 @@ next_song ()
 
 {
 
-	if [ "$PLAYLIST_RECENT_LINE" -eq  "$PLAYLIST_LASTLINE" ]
+	if [ "$PLAYLIST_RECENT_LINE" -eq "$PLAYLIST_LASTLINE" ]
 	then
 	PLAYLIST_RECENT_LINE="1"
 	else
