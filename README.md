@@ -37,15 +37,23 @@ exit
 
 # Install on Raspbian Lite
 
+# On another computer prepare bshplyr (apt and apt-get hang on download with IPV6):
+
 sudo apt-get install -y git
 
 git clone https://github.com/iugamarian/bshplyr/
 
 cd bshplyr
 
+chmod +x before-setup
+
 chmod +x setup-bshplyr-delete-raspbian-lite
 
+# Copy bshplyr to /root in Raspbian Lite and in there install it:
+
 sudo -s
+
+./before-setup
 
 ./setup-bshplyr-delete-raspbian-lite
 
