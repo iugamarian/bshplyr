@@ -56,9 +56,9 @@ else
         exit
 fi
 # Tested and playlist can exist but have zero songs so avoid that too
-if [ $PLAYLIST_LASTLINE -eq "0"]
+if [ "$PLAYLIST_LASTLINE" -lt "1"]
 then
-        espeak -a 600 -p 0 "No songs found, exiting! No songs found, exiting!"
+        espeak -a 600 -p 0 "Zero songs found, exiting! Zero songs found, exiting!"
         exit
 fi
 
