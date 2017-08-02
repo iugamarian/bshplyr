@@ -56,14 +56,14 @@ else
         exit
 fi
 # Tested and playlist can exist but have zero songs so avoid that too
-if [ "$PLAYLIST_LASTLINE" -lt "1"]
+if [ "$PLAYLIST_LASTLINE" -lt "1" ]
 then
         espeak -a 600 -p 0 "Zero songs found, exiting! Zero songs found, exiting!"
         exit
 fi
 
 # Avoid a saved song number larger than the number of songs
-if [ "$PLAYLIST_RECENT_LINE" -gt  "$PLAYLIST_LASTLINE" ]
+if [ "$PLAYLIST_RECENT_LINE" -gt "$PLAYLIST_LASTLINE" ]
 then
 PLAYLIST_RECENT_LINE="1"
 fi
@@ -127,10 +127,10 @@ delete_song ()
 #### [ BOOTING WITH SYSTEMD ] ####
 
 # Lite boot delay (no x server)
-/usr/bin/sleep 3
+/usr/bin/sleep 4
 
 # Heavy boot delay (x server)
-#/usr/bin/sleep 5
+#/usr/bin/sleep 7
 
 # Check four times (detect possible unwanted noise) that pull up resistors for buttons work, exit if not
 if [ `gpio read $DELETE_BUTTON_ADDRESS` = 0  ] || [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
