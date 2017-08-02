@@ -55,6 +55,13 @@ else
         espeak -a 600 -p 0 "No songs found, exiting! No songs found, exiting!"
         exit
 fi
+# Tested and playlist can exist but have zero songs so avoid that too
+if [ $PLAYLIST_LASTLINE -eq "0"]
+then
+        espeak -a 600 -p 0 "No songs found, exiting! No songs found, exiting!"
+        exit
+fi
+
 # Avoid a saved song number larger than the number of songs
 if [ "$PLAYLIST_RECENT_LINE" -gt  "$PLAYLIST_LASTLINE" ]
 then
@@ -155,7 +162,7 @@ fi
 # Uncomment if using a USB stick or card in USB adapter
 #mount /dev/sda1 /root/music
 
-# This will also be called after a song delete
+# This will not also be called after a song delete, avoided with sed
 generate_playlist
 
 # Only once at start specify status
