@@ -14,13 +14,18 @@ PATH_MOD="/root/music/"
 PLAYLIST="/run/playlist" # /tmp on Raspbian is not a tmpfs but /run is
 PLAYLIST_RECENT_LINE=$[$(cat "$PLAYLIST_SAVED_FILE")]
 PLAYLIST_LASTLINE="0"
-DELETE_BUTTON_ADRESS="0"
+#DELETE_BUTTON_ADRESS="0"
+DELETE_BUTTON_ADRESS="15"
 DELETE_BUTTON_RELEASED="1"
-NEXT_BUTTON_ADRESS="1"
+#NEXT_BUTTON_ADRESS="1"
+NEXT_BUTTON_ADRESS="16"
 NEXT_BUTTON_RELEASED="1"
 
 # WiringPi call of GPIO 0 is actually GPIO 17
 # WiringPi call of GPIO 1 is actually GPIO 18
+
+# WiringPi call of GPIO 15 is actually GPIO 14
+# WiringPi call of GPIO 16 is actually GPIO 15
 
 # Using gpio command installed when installing WiringPi library, linking it
 # http://wiringpi.com/the-gpio-utility/
@@ -52,14 +57,18 @@ if [ -f "$PLAYLIST" ]
 then
 	PLAYLIST_LASTLINE=`cat "$PLAYLIST" | wc -l`
 else
-        espeak -a 600 -p 0 "No songs found, exiting! No songs found, exiting!"
-        exit
+	espeak -a 600 -p 0 -w /run/nofound.wav "No songs found, exiting! No songs found, exiting!"
+	/bin/sleep 0.1
+	omxplayer --vol -1000 /run/nofound.wav
+	exit
 fi
 # Tested and playlist can exist but have zero songs so avoid that too
 if [ "$PLAYLIST_LASTLINE" -lt "1" ]
 then
-        espeak -a 600 -p 0 "Zero songs found, exiting! Zero songs found, exiting!"
-        exit
+	espeak -a 600 -p 0 -w /run/zerofound.wav "Zero songs found, exiting! Zero songs found, exiting!"
+	/bin/sleep 0.1
+	omxplayer --vol -1000 /run/zerofound.wav
+	exit
 fi
 
 # Avoid a saved song number larger than the number of songs
@@ -107,8 +116,8 @@ delete_song ()
 
 {
 
-	espeak -a 600 -p 0 "Deleted."
-	/usr/bin/sleep 0.1
+	omxplayer --vol -1000 /run/deleted.wav
+	/bin/sleep 0.1
 	rm "$SONGFILE"
 	# http://www.yourownlinux.com/2015/04/sed-command-in-linux-delete-lines-from-file.html
 	# http://stackoverflow.com/questions/5171901/sed-command-find-and-replace-in-file-and-overwrite-file-doesnt-work-it-empties
@@ -127,26 +136,28 @@ delete_song ()
 #### [ BOOTING WITH SYSTEMD ] ####
 
 # Lite boot delay (no x server)
-/usr/bin/sleep 4
+/bin/sleep 5
 
 # Heavy boot delay (x server)
-#/usr/bin/sleep 7
+#/bin/sleep 8
 
 # Check four times (detect possible unwanted noise) that pull up resistors for buttons work, exit if not
-if [ `gpio read $DELETE_BUTTON_ADDRESS` = 0  ] || [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
+if [ `gpio read $DELETE_BUTTON_ADDRESS` = 0 ] || [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
 then
-	/usr/bin/sleep 0.1
+	/bin/sleep 0.1
 	if [ `gpio read $DELETE_BUTTON_ADDRESS` = 0 ] || [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
 	then
-		/usr/bin/sleep 0.1
+		/bin/sleep 0.1
 		if [ `gpio read $DELETE_BUTTON_ADDRESS` = 0 ] || [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
 		then
-			/usr/bin/sleep 0.1
+			/bin/sleep 0.1
 			if [ `gpio read $DELETE_BUTTON_ADDRESS` = 0 ] || [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
 			then
-				espeak -a 600 -p 0 "Buttons pull uo resistors not working properly, exiting."
-				/usr/bin/sleep 0.1
-				espeak -a 600 -p 0 "Buttons pull uo resistors not working properly, exiting."
+				espeak -a 600 -p 0 -w /run/buttons.wav "Buttons pull uo resistors not working properly, exiting."
+				/bin/sleep 0.1
+				omxplayer --vol -1000 /run/buttons.wav
+				/bin/sleep 0.1
+				omxplayer --vol -1000 /run/buttons.wav
 			exit
 			fi
 		fi
@@ -161,19 +172,28 @@ fi
 
 # Uncomment if using a USB stick or card in USB adapter
 #mount /dev/sda1 /root/music
+/bin/sleep 1
 
 # This will not also be called after a song delete, avoided with sed
 generate_playlist
 
 # Only once at start specify status
-espeak -a 600 -p 0 "Found $PLAYLIST_LASTLINE songs, playing $PLAYLIST_RECENT_LINE."
+espeak -a 600 -p 0 -w /run/status.wav "Found $PLAYLIST_LASTLINE songs, playing $PLAYLIST_RECENT_LINE."
+/bin/sleep 0.1
+omxplayer --vol -1000 /run/status.wav
+
+# Sounds for delete and next
+espeak -a 600 -p 0 -w /run/deleted.wav "Yes now deleted."
+/bin/sleep 0.1
+espeak -a 600 -p 0 -w /run/next.wav "Yes now next."
+/bin/sleep 0.1
 
 #### [ SYNC DATA TO PROTECT AGAINST CORRUPTION FROM POWER LOSS ] ####
 
 # This is saving all changes done to disk by the systemd boot process
-#/usr/bin/sleep 0.1
+#/bin/sleep 0.1
 #sync
-#/usr/bin/sleep 0.1
+#/bin/sleep 0.1
 
 #### [ CONTROL LOOP THAT REPEATS INFINETLY ] ####
 
@@ -187,9 +207,9 @@ do
 	# Determine the song by wanted line in the playlist (path and filename)
 	SONGFILE=`cat "$PLAYLIST" | sed -n "$PLAYLIST_RECENT_LINE"p`
 	# Write all changes to disk (before starting the player)
-	/usr/bin/sleep 0.1
+	/bin/sleep 0.1
 	sync
-	/usr/bin/sleep 0.1
+	/bin/sleep 0.1
 	# Starting the player, when " &" at the end, the script continues without waiting to finish command to the left
 	"$PLAYERBIN" --vol -1000 "$SONGFILE" &
 	# --vol -1000 reduces volume to aproximately 90%, required for bass not to go over in sound adapter
@@ -200,12 +220,12 @@ do
 	if [ `gpio read $DELETE_BUTTON_ADRESS` = 1 ]
 	then
 	# Wait for the GPIO driver to rest
-	/usr/bin/sleep 0.1
+	/bin/sleep 0.1
 	# Test again to make sure it is not noise
 		if [ `gpio read $DELETE_BUTTON_ADRESS` = 1 ]
 		then
 		# Wait for the GPIO driver to rest
-		/usr/bin/sleep 0.1
+		/bin/sleep 0.1
 		DELETE_BUTTON_RELEASED="1"
 		fi
 	fi
@@ -215,20 +235,20 @@ do
 	if [ $DELETE_BUTTON_RELEASED -eq "1" ] && [ `gpio read $DELETE_BUTTON_ADRESS` = 0 ]
 	then
 	# Wait for the GPIO driver to rest
-	/usr/bin/sleep 0.1
+	/bin/sleep 0.1
 	# Test again to make sure it is not noise (already checked released)
 		if [ `gpio read $DELETE_BUTTON_ADRESS` = 0 ]
 		then
 		# Wait for the GPIO driver to rest
-		/usr/bin/sleep 0.1
+		/bin/sleep 0.1
 		# Killing the player like a song ending will allow a next song
 		killall $PLAYERKILL
 		# Deleting song after the player is not playing it
 		# Wait for the file system to be released after the player has been killed
-		/usr/bin/sleep 0.1
+		/bin/sleep 0.1
 		delete_song
 		# Wait for the file system to acknowledge the deletion
-		/usr/bin/sleep 0.1
+		/bin/sleep 0.1
 		# Don't allow a new delete button press until released
 		DELETE_BUTTON_RELEASED="0"
 		fi
@@ -239,12 +259,12 @@ do
 	if [ `gpio read $NEXT_BUTTON_ADRESS` = 1 ]
 	then
 	# Wait for the GPIO driver to rest
-	/usr/bin/sleep 0.1
+	/bin/sleep 0.1
 	# Test again to make sure it is not noise
 		if [ `gpio read $NEXT_BUTTON_ADRESS` = 1 ]
 		then
 		# Wait for the GPIO driver to rest
-		/usr/bin/sleep 0.1
+		/bin/sleep 0.1
 		NEXT_BUTTON_RELEASED="1"
 		fi
 	fi
@@ -254,18 +274,18 @@ do
 	if [ $NEXT_BUTTON_RELEASED -eq "1" ] && [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
 	then
 	# Wait for the GPIO driver to rest
-	/usr/bin/sleep 0.1
+	/bin/sleep 0.1
 	# Test again to make sure it is not noise (already checked released)
 		if [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
 		then
 		# Wait for the GPIO driver to rest
-		/usr/bin/sleep 0.1
+		/bin/sleep 0.1
 		# Killing the player like a song ending will allow a next song
 		killall $PLAYERKILL
 		# Wait for the file system to be released after the player has been killed
-		/usr/bin/sleep 0.1
-		espeak -a 600 -p 0 "Next."
-		/usr/bin/sleep 0.1
+		/bin/sleep 0.1
+		omxplayer --vol -1000 /run/next.wav
+		/bin/sleep 0.1
 		# Don't allow a new next button press until released
 		NEXT_BUTTON_RELEASED="0"
 		fi
@@ -285,6 +305,6 @@ do
 ## [ GO SLOWER THROUGH THE INFINITE LOOP IF NO CHANGES ] ##
 
 	# But be fast enough to sense the buttons and stopped player with snapiness
-	/usr/bin/sleep 0.1
+	/bin/sleep 0.1
 
 done
