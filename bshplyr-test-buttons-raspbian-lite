@@ -1,0 +1,140 @@
+#!/bin/bash
+
+DELETE_BUTTON_ADRESS="15"
+DELETE_BUTTON_RELEASED="1"
+NEXT_BUTTON_ADRESS="16"
+NEXT_BUTTON_RELEASED="1"
+
+# WiringPi call of GPIO 15 is actually GPIO 14
+# WiringPi call of GPIO 16 is actually GPIO 15
+# Required to disable serial interface before they work
+
+# Using gpio command installed when installing WiringPi library, linking it
+# http://wiringpi.com/the-gpio-utility/
+gpio mode $DELETE_BUTTON_ADRESS in
+gpio mode $NEXT_BUTTON_ADRESS in
+
+# Turn off pull down resistors on the two imputs (remains floating, use physical resistors to pull up)
+#gpio mode $DELETE_BUTTON_ADRESS tri
+#gpio mode $NEXT_BUTTON_ADRESS tri
+
+# Turn on pull up resistors on the two imputs (not as good as using physical 100k resistors)
+gpio mode $DELETE_BUTTON_ADRESS up
+gpio mode $NEXT_BUTTON_ADRESS up
+
+delete_song ()
+
+{
+
+	omxplayer --vol -1000 /run/deleted.wav
+
+}
+
+
+#### [ BOOTING WITH SYSTEMD ] ####
+
+# Lite boot delay (no x server)
+/bin/sleep 5
+
+# Heavy boot delay (x server)
+#/bin/sleep 8
+
+# Sounds for delete and next
+espeak -a 600 -p 0 -w /run/deleted.wav "Yes now deleted."
+espeak -a 600 -p 0 -w /run/next.wav "Yes now next."
+
+#### [ SYNC DATA TO PROTECT AGAINST CORRUPTION FROM POWER LOSS ] ####
+
+# This is saving all changes done to disk by the systemd boot process
+#/usr/bin/sleep 0.1
+#sync
+#/usr/bin/sleep 0.1
+
+#### [ CONTROL LOOP THAT REPEATS INFINETLY ] ####
+
+while true
+do
+
+
+## [ DETECT DELETE BUTTON RELEASED ---->>>> ALLOW A NEW DELETE BUTTON TO BE PRESSED ] ##
+
+	if [ `gpio read $DELETE_BUTTON_ADRESS` = 1 ]
+	then
+	# Wait for the GPIO driver to rest
+	/bin/sleep 0.1
+	# Test again to make sure it is not noise
+		if [ `gpio read $DELETE_BUTTON_ADRESS` = 1 ]
+		then
+		# Wait for the GPIO driver to rest
+		/bin/sleep 0.1
+		DELETE_BUTTON_RELEASED="1"
+		fi
+	fi
+
+## [ DETECT DELETE BUTTON WAS RELEASED AND IS PRESSED ---->>>  STOP PLAYER  ---->>>>  DELETE THE UNWANTED SONG ] ##
+
+	if [ $DELETE_BUTTON_RELEASED -eq "1" ] && [ `gpio read $DELETE_BUTTON_ADRESS` = 0 ]
+	then
+	# Wait for the GPIO driver to rest
+	/bin/sleep 0.1
+	# Test again to make sure it is not noise (already checked released)
+		if [ `gpio read $DELETE_BUTTON_ADRESS` = 0 ]
+		then
+		# Wait for the GPIO driver to rest
+		/bin/sleep 0.1
+		# Killing the player like a song ending will allow a next song
+#####		killall $PLAYERKILL
+		# Deleting song after the player is not playing it
+		# Wait for the file system to be released after the player has been killed
+		/bin/sleep 0.1
+		delete_song
+		# Wait for the file system to acknowledge the deletion
+		/bin/sleep 0.1
+		# Don't allow a new delete button press until released
+		DELETE_BUTTON_RELEASED="0"
+		fi
+	fi
+
+## [ DETECT NEXT BUTTON RELEASED ---->>>> ALLOW A NEW NEXT BUTTON TO BE PRESSED ] ##
+
+	if [ `gpio read $NEXT_BUTTON_ADRESS` = 1 ]
+	then
+	# Wait for the GPIO driver to rest
+	/bin/sleep 0.1
+	# Test again to make sure it is not noise
+		if [ `gpio read $NEXT_BUTTON_ADRESS` = 1 ]
+		then
+		# Wait for the GPIO driver to rest
+		/bin/sleep 0.1
+		NEXT_BUTTON_RELEASED="1"
+		fi
+	fi
+
+## [ DETECT NEXT BUTTON WAS RELEASED AND IS PRESSED ---->>>  STOP PLAYER  ---->>>>  CURRENT SONG FINISHED SO NEXT ] ##
+
+	if [ $NEXT_BUTTON_RELEASED -eq "1" ] && [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
+	then
+	# Wait for the GPIO driver to rest
+	/bin/sleep 0.1
+	# Test again to make sure it is not noise (already checked released)
+		if [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
+		then
+		# Wait for the GPIO driver to rest
+		/bin/sleep 0.1
+		# Killing the player like a song ending will allow a next song
+#####		killall $PLAYERKILL
+		# Wait for the file system to be released after the player has been killed
+		/bin/sleep 0.1
+		omxplayer --vol -1000 /run/next.wav
+		/bin/sleep 0.1
+		# Don't allow a new next button press until released
+		NEXT_BUTTON_RELEASED="0"
+		fi
+	fi
+
+## [ GO SLOWER THROUGH THE INFINITE LOOP IF NO CHANGES ] ##
+
+	# But be fast enough to sense the buttons and stopped player with snapiness
+	/bin/sleep 0.1
+
+done
