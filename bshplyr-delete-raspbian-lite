@@ -141,19 +141,20 @@ delete_song ()
 # Heavy boot delay (x server)
 #/bin/sleep 8
 
-# Check four times (detect possible unwanted noise) that pull up resistors for buttons work, exit if not
-if [ `gpio read $DELETE_BUTTON_ADDRESS` = 0 ] || [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
+# Check two times for each (detect possible unwanted noise) that pull up resistors for buttons work, exit if not
+if [ `gpio read $DELETE_BUTTON_ADRESS` = 1 ]
 then
 	/bin/sleep 0.1
-	if [ `gpio read $DELETE_BUTTON_ADDRESS` = 0 ] || [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
+	if [ `gpio read $DELETE_BUTTON_ADRESS` = 1 ]
 	then
 		/bin/sleep 0.1
-		if [ `gpio read $DELETE_BUTTON_ADDRESS` = 0 ] || [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
+		if [ `gpio read $NEXT_BUTTON_ADRESS` = 1 ]
 		then
 			/bin/sleep 0.1
-			if [ `gpio read $DELETE_BUTTON_ADDRESS` = 0 ] || [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
+			if [ `gpio read $NEXT_BUTTON_ADRESS` = 1 ]
 			then
-				espeak -a 600 -p 0 -w /run/buttons.wav "Buttons pull uo resistors not working properly, exiting."
+				/bin/sleep 0.1
+				espeak -a 600 -p 0 -w /run/buttons.wav "Buttons pull up resistors not working properly, both buttons are seen as pressed, exiting."
 				/bin/sleep 0.1
 				omxplayer --vol -1000 /run/buttons.wav
 				/bin/sleep 0.1
