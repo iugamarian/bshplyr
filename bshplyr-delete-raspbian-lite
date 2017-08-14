@@ -142,16 +142,16 @@ delete_song ()
 #/bin/sleep 8
 
 # Check two times for each (detect possible unwanted noise) that pull up resistors for buttons work, exit if not
-if [ `gpio read $DELETE_BUTTON_ADRESS` = 1 ]
+if [ `gpio read $DELETE_BUTTON_ADRESS` = 0 ]
 then
 	/bin/sleep 0.1
-	if [ `gpio read $DELETE_BUTTON_ADRESS` = 1 ]
+	if [ `gpio read $DELETE_BUTTON_ADRESS` = 0 ]
 	then
 		/bin/sleep 0.1
-		if [ `gpio read $NEXT_BUTTON_ADRESS` = 1 ]
+		if [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
 		then
 			/bin/sleep 0.1
-			if [ `gpio read $NEXT_BUTTON_ADRESS` = 1 ]
+			if [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
 			then
 				/bin/sleep 0.1
 				espeak -a 600 -p 0 -w /run/buttons.wav "Buttons pull up resistors not working properly, both buttons are seen as pressed, exiting."
