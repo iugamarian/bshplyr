@@ -136,10 +136,10 @@ delete_song ()
 #### [ BOOTING WITH SYSTEMD ] ####
 
 # Lite boot delay (no x server)
-/bin/sleep 5
+/bin/sleep 10
 
 # Heavy boot delay (x server)
-#/bin/sleep 8
+#/bin/sleep 15
 
 # Check two times for each (detect possible unwanted noise) that pull up resistors for buttons work, exit if not
 if [ `gpio read $DELETE_BUTTON_ADRESS` = 0 ]
@@ -172,7 +172,7 @@ fi
 #### [ PLAYLIST ] ####
 
 # Uncomment if using a USB stick or card in USB adapter
-#mount /dev/sda1 /root/music
+mount /dev/sda1 /root/music
 /bin/sleep 1
 
 # This will not also be called after a song delete, avoided with sed
