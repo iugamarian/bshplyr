@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# OLDER ARCH LINUX ARM VERSION - RECOMMENDED USE RASPBIAN LITE VERSION NOT THIS ONE
 # Song destroyer mode - deletes song when delete button pressed
 
 #PLAYERBIN="/usr/bin/omxplayer"
@@ -119,10 +119,10 @@ delete_song ()
 #### [ BOOTING WITH SYSTEMD ] ####
 
 # Lite boot delay (no x server)
-usr/bin/sleep 1
+usr/bin/sleep 10
 
 # Heavy boot delay (x server)
-#usr/bin/sleep 3
+#usr/bin/sleep 15
 
 # Check four times (detect possible unwanted noise) that pull up resistors for buttons work, exit if not
 if [ `gpio read $DELETE_BUTTON_ADDRESS` = 0  ] || [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
