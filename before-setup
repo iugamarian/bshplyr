@@ -42,21 +42,33 @@ sysctl -a | grep disable | grep ipv6
 #/etc/sysctl.d/99-sysctl.conf. If you had e.g. /etc/sysctl.d/foo,
 #you need to rename is to /etc/sysctl.d/foo.conf.
 
-# Using 99- to apply after other .conf files enabled ipv6:
+# Stop trying for IPV6 as ISP's still use only IPV4 and IPV6 packets are lost
+sed -i 's/rootwait/ipv6.disable=1 rootwait/g' /boot/cmdline.txt
 
-cat <<EOF > /etc/sysctl.d/99-rpi-disable-ipv6.conf
-net.ipv6.conf.all.disable_ipv6 = 1
-net.ipv6.conf.default.disable_ipv6 = 1
-EOF
+
+# Using 99- to apply after other .conf files enabled ipv6, not needed if cmdline.txt disables IPV6:
+
+#cat <<EOF > /etc/sysctl.d/99-rpi-disable-ipv6.conf
+#net.ipv6.conf.all.disable_ipv6 = 1
+#net.ipv6.conf.default.disable_ipv6 = 1
+#EOF
 #net.ipv6.conf.lo.disable_ipv6 = 1
 #net.ipv6.conf.eth0.disable_ipv6 = 1
 #net.ipv6.conf.[interface].disable_ipv6 = 1
+
+# Disable internal sound card as it's very low quality (check how "Tiesto - Adagio for strings" sounds on it)
+cat <<EOF > /etc/modprobe.d/alsainternalsndoff.conf
+blacklist snd_bcm2835
+EOF
+
+# Allow usb sound cards to work, avoid alsa errors
+sed -i 's/options snd-usb-audio index=-2/#options snd-usb-audio index=-2/g' /lib/modprobe.d/aliases.conf
 
 # Making sure in case of power loss data loss is reduced drastically
 
 cat <<EOF > /etc/sysctl.d/30-rpi-optimizations.conf
 vm.swappiness = 60
-vm.min_free_kbytes = 8192
+vm.min_free_kbytes = 49152
 vm.vfs_cache_pressure = 500
 vm.dirty_bytes = 8388608
 vm.dirty_background_bytes = 8388608
@@ -67,11 +79,13 @@ EOF
 # If those files are already there, they get rewritten, not added to.
 
 sync
-sleep 1
+sleep 2
 
 # Load all configuration files manually:
-sysctl --system
+#sysctl --system
 
-# or reboot
+#sysctl -a | grep disable | grep ipv6
 
-sysctl -a | grep disable | grep ipv6
+# Reboot to completely and utterly disable IPV6, avoiding apt stallings
+
+reboot
