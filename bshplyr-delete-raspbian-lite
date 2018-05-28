@@ -2,9 +2,9 @@
 
 # Song destroyer mode - deletes song when delete button pressed
 
-PLAYERBIN="/usr/bin/omxplayer"
-PLAYERTEST="omxplayer"
-PLAYERKILL="omxplayer.bin"
+PLAYERBIN="/usr/bin/mpv"
+PLAYERTEST="mpv"
+PLAYERKILL="mpv"
 PLAYLIST_SAVED_FILE="/root/saved"
 SONGFILE=""	# path to the song to be played
 START_PLAYER="1"
@@ -59,7 +59,7 @@ then
 else
 	espeak -a 600 -p 0 -w /run/nofound.wav "No songs found, exiting! No songs found, exiting!"
 	/bin/sleep 0.1
-	omxplayer --vol -1000 /run/nofound.wav
+	mpv /run/nofound.wav
 	exit
 fi
 # Tested and playlist can exist but have zero songs so avoid that too
@@ -67,7 +67,7 @@ if [ "$PLAYLIST_LASTLINE" -lt "1" ]
 then
 	espeak -a 600 -p 0 -w /run/zerofound.wav "Zero songs found, exiting! Zero songs found, exiting!"
 	/bin/sleep 0.1
-	omxplayer --vol -1000 /run/zerofound.wav
+	mpv /run/zerofound.wav
 	exit
 fi
 
@@ -116,7 +116,7 @@ delete_song ()
 
 {
 
-	omxplayer --vol -1000 /run/deleted.wav
+	mpv /run/deleted.wav
 	/bin/sleep 0.1
 	rm "$SONGFILE"
 	# http://www.yourownlinux.com/2015/04/sed-command-in-linux-delete-lines-from-file.html
@@ -156,14 +156,16 @@ then
 				/bin/sleep 0.1
 				espeak -a 600 -p 0 -w /run/buttons.wav "Buttons pull up resistors not working properly, both buttons are seen as pressed, exiting."
 				/bin/sleep 0.1
-				omxplayer --vol -1000 /run/buttons.wav
+				mpv /run/buttons.wav
 				/bin/sleep 0.1
-				omxplayer --vol -1000 /run/buttons.wav
+				mpv /run/buttons.wav
 			exit
 			fi
 		fi
 	fi
 fi
+
+mount /dev/sda1 /root/music
 
 #### [ INCREASE BATTERY LIFE FOR B MODEL, THIS DISABLES USB AND LAN CHIP ] ####
 
@@ -179,14 +181,14 @@ mount /dev/sda1 /root/music
 generate_playlist
 
 # Only once at start specify status
-espeak -a 600 -p 0 -w /run/status.wav "Found $PLAYLIST_LASTLINE songs, playing $PLAYLIST_RECENT_LINE."
+espeak -a 600 -p 0 -w /run/status.wav "I have found $PLAYLIST_LASTLINE songs, playing $PLAYLIST_RECENT_LINE."
 /bin/sleep 0.1
-omxplayer --vol -1000 /run/status.wav
+mpv /run/status.wav
 
 # Sounds for delete and next
-espeak -a 600 -p 0 -w /run/deleted.wav "Yes now deleted."
+espeak -a 600 -p 0 -w /run/deleted.wav "Deleted."
 /bin/sleep 0.1
-espeak -a 600 -p 0 -w /run/next.wav "Yes now next."
+espeak -a 600 -p 0 -w /run/next.wav "Next."
 /bin/sleep 0.1
 
 #### [ SYNC DATA TO PROTECT AGAINST CORRUPTION FROM POWER LOSS ] ####
@@ -212,7 +214,7 @@ do
 	sync
 	/bin/sleep 0.1
 	# Starting the player, when " &" at the end, the script continues without waiting to finish command to the left
-	"$PLAYERBIN" --vol -1000 "$SONGFILE" &
+	"$PLAYERBIN" --start=60 "$SONGFILE" &
 	# --vol -1000 reduces volume to aproximately 90%, required for bass not to go over in sound adapter
 	fi
 
@@ -285,7 +287,7 @@ do
 		killall $PLAYERKILL
 		# Wait for the file system to be released after the player has been killed
 		/bin/sleep 0.1
-		omxplayer --vol -1000 /run/next.wav
+		mpv /run/next.wav
 		/bin/sleep 0.1
 		# Don't allow a new next button press until released
 		NEXT_BUTTON_RELEASED="0"
