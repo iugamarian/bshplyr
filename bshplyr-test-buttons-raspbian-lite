@@ -26,7 +26,7 @@ delete_song ()
 
 {
 
-	omxplayer --vol -1000 /run/deleted.wav
+	mpv /run/deleted.wav
 
 }
 
@@ -125,7 +125,7 @@ do
 #####		killall $PLAYERKILL
 		# Wait for the file system to be released after the player has been killed
 		/bin/sleep 0.1
-		omxplayer --vol -1000 /run/next.wav
+		mpv /run/next.wav
 		/bin/sleep 0.1
 		# Don't allow a new next button press until released
 		NEXT_BUTTON_RELEASED="0"
