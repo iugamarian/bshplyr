@@ -5,8 +5,6 @@
 
 Adapted for directory structure (just copy the folders with music in /root/music), creates lists only for .wav .flac .mp3 .ogg .mp4 thus avoiding other files like .m3u .jpg .txt
 
-bshplyr-delete works on Arch Linux Arm
-
 bshplyr-delete-raspbian-lite works on Raspbian Lite
 
 On Raspbian Lite:
@@ -17,27 +15,10 @@ testing the player needs omxplayer instead of omxplayer.bin
 
 killall needs omxplayer.bin instead of /usr/bin/omxplayer.bin
 
-# Install on Arch Linux ARM
-
-sudo pacman -S git
-
-git clone https://github.com/iugamarian/bshplyr/
-
-cd bshplyr
-
-chmod +x setup-bshplyr-delete
-
-sudo -s
-
-./setup-bshplyr-delete
-
-exit
-
-
 
 # Install on Raspbian Lite
 
-# On another computer prepare bshplyr (apt and apt-get hang on download with IPV6):
+# On another computer prepare bshplyr (apt and apt-get hang on download with IPV6 if ISP only has IPV4):
 
 sudo apt-get install -y git
 
@@ -62,20 +43,20 @@ exit
 
 # How to use it
 
-1) Start in the destination Linux and install and poweroff
+1) Start in the destination Linux, install, disable serial interface in raspi-config (free GPIO 17 and GPIO 18) and poweroff
 
-2) Get SDCARD out and put some music from another computer in the ext4 folder /root/music
+2) Get another SDCARD in a USB adapter or USB stick, format it FAT32 or EXT4, copy music to it, put it in Raspberry Pi. Or get the Raspbian SDCARD out and put some music from another computer in the ext4 folder /root/music
 
-2) Put buttons that pull to ground when pressed on GPIO 17 (DELETE) and GPIO 18 (NEXT)
+2) Put hardware buttons that pull to ground when pressed on GPIO 17 (DELETE) and GPIO 18 (NEXT)
 
 3) Put SDCARD in
 
-4) Apply 5V power, listen and delete or next, remove 5V power, it remembers last song played.
+4) Apply 5V power, listen and delete or next, remove 5V power, it remembers the last song played.
 
-5) When you consider there is no more music to be deleted, make a backup of /root/music and rename the backup to selected-music-YY-MM-DD
+5) When you consider there is no more music to be deleted, make a backup of the music or /root/music and rename the backup to selected-music-YY-MM-DD
 
-6) Remove power and go to 2) when you get bored with current music.
+6) Remove power listen to the music in another player and go to 2) when you get bored with current music.
 
 
 # TODO:
-write the program in c, still calling omxplayer
+write the program in c, still calling omxplayer or mpv
