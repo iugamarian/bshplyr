@@ -60,7 +60,12 @@ sed -i 's/rootwait/ipv6.disable=1 rootwait/g' /boot/cmdline.txt
 cat <<EOF > /etc/modprobe.d/alsainternalsndoff.conf
 blacklist snd_bcm2835
 EOF
-
+#Disable pulseaudio to reduce sound arterfacts during playback
+# https://wiki.archlinux.org/index.php/PulseAudio/Examples
+cat <<EOF > /etc/pulse/client.conf
+autospawn=no
+daemon-binary=/bin/true
+EOF
 # Allow usb sound cards to work, avoid alsa errors
 sed -i 's/options snd-usb-audio index=-2/#options snd-usb-audio index=-2/g' /lib/modprobe.d/aliases.conf
 
