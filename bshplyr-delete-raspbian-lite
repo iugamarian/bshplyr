@@ -216,7 +216,8 @@ do
 	sync
 	/bin/sleep 0.1
 	# Starting the player, when " &" at the end, the script continues without waiting to finish command to the left
-	"$PLAYERBIN" --start=60 "$SONGFILE" &
+	# --no-audio-display to avoid trying to show picture in audio file because error no X server, no play
+	"$PLAYERBIN" --start=60 --no-audio-display "$SONGFILE" &
 	# --vol -1000 reduces volume to aproximately 90%, required for bass not to go over in sound adapter
 	fi
 
