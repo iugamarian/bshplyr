@@ -122,7 +122,9 @@ delete_song ()
 	# http://www.yourownlinux.com/2015/04/sed-command-in-linux-delete-lines-from-file.html
 	# http://stackoverflow.com/questions/5171901/sed-command-find-and-replace-in-file-and-overwrite-file-doesnt-work-it-empties
 	sed -i "$PLAYLIST_RECENT_LINE d" $PLAYLIST
-	# Decrease song number by one so that next_song will use the same song number
+	# The complete list is smaller by one song so decrease last line before current song
+	PLAYLIST_LASTLINE=$((PLAYLIST_LASTLINE-1))
+	# Decrease current song number by one so that next_song will use the same song number
 	if [ "$PLAYLIST_RECENT_LINE" -eq  "1" ]
 	then
 	PLAYLIST_RECENT_LINE="$PLAYLIST_LASTLINE"
@@ -220,13 +222,16 @@ do
 
 ## [ DETECT DELETE BUTTON RELEASED ---->>>> ALLOW A NEW DELETE BUTTON TO BE PRESSED ] ##
 
-	if [ `gpio read $DELETE_BUTTON_ADRESS` = 1 ]
+	if [ $DELETE_BUTTON_RELEASED -eq "0" ]
 	then
-	# Wait for the GPIO driver to rest
-	/bin/sleep 0.1
-	DELETE_BUTTON_RELEASED="1"
+		if [ `gpio read $DELETE_BUTTON_ADRESS` = 1 ]
+		then
+		# Wait for the GPIO driver to rest
+		/bin/sleep 0.1
+		DELETE_BUTTON_RELEASED="1"
+		fi
 	fi
-
+	
 ## [ DETECT DELETE BUTTON WAS RELEASED AND IS PRESSED ---->>>  STOP PLAYER  ---->>>>  DELETE THE UNWANTED SONG ] ##
 
 	# As bash is slow no button debounce check, make the button debounce in hardware
@@ -248,11 +253,14 @@ do
 
 ## [ DETECT NEXT BUTTON RELEASED ---->>>> ALLOW A NEW NEXT BUTTON TO BE PRESSED ] ##
 
-	if [ `gpio read $NEXT_BUTTON_ADRESS` = 1 ]
+	if [ $NEXT_BUTTON_RELEASED -eq "0" ]
 	then
-	# Wait for the GPIO driver to rest
-	/bin/sleep 0.1
-	NEXT_BUTTON_RELEASED="1"
+		if [ `gpio read $NEXT_BUTTON_ADRESS` = 1 ]
+		then
+		# Wait for the GPIO driver to rest
+		/bin/sleep 0.1
+		NEXT_BUTTON_RELEASED="1"
+		fi
 	fi
 
 ## [ DETECT NEXT BUTTON WAS RELEASED AND IS PRESSED ---->>>  STOP PLAYER  ---->>>>  CURRENT SONG FINISHED SO NEXT ] ##
@@ -283,7 +291,7 @@ do
 	START_PLAYER="0"
 	fi
 
-## [ GO SLOWER THROUGH THE INFINITE LOOP IF NO CHANGES ] ##
+## [ GO SLOWER THROUGH THE INFINITE LOOP TO KEEP CPU USAGE LOW ] ##
 
 	# But be fast enough to sense the buttons and stopped player with snapiness
 	/bin/sleep 0.1
