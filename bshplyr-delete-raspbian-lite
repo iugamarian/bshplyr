@@ -224,37 +224,26 @@ do
 	then
 	# Wait for the GPIO driver to rest
 	/bin/sleep 0.1
-	# Test again to make sure it is not noise
-		if [ `gpio read $DELETE_BUTTON_ADRESS` = 1 ]
-		then
-		# Wait for the GPIO driver to rest
-		/bin/sleep 0.1
-		DELETE_BUTTON_RELEASED="1"
-		fi
+	DELETE_BUTTON_RELEASED="1"
 	fi
 
 ## [ DETECT DELETE BUTTON WAS RELEASED AND IS PRESSED ---->>>  STOP PLAYER  ---->>>>  DELETE THE UNWANTED SONG ] ##
 
+	# As bash is slow no button debounce check, make the button debounce in hardware
 	if [ $DELETE_BUTTON_RELEASED -eq "1" ] && [ `gpio read $DELETE_BUTTON_ADRESS` = 0 ]
 	then
 	# Wait for the GPIO driver to rest
 	/bin/sleep 0.1
-	# Test again to make sure it is not noise (already checked released)
-		if [ `gpio read $DELETE_BUTTON_ADRESS` = 0 ]
-		then
-		# Wait for the GPIO driver to rest
-		/bin/sleep 0.1
-		# Killing the player like a song ending will allow a next song
-		killall $PLAYERKILL
-		# Deleting song after the player is not playing it
-		# Wait for the file system to be released after the player has been killed
-		/bin/sleep 0.1
-		delete_song
-		# Wait for the file system to acknowledge the deletion
-		/bin/sleep 0.1
-		# Don't allow a new delete button press until released
-		DELETE_BUTTON_RELEASED="0"
-		fi
+	# Killing the player like a song ending will allow a next song
+	killall $PLAYERKILL
+	# Deleting song after the player is not playing it
+	# Wait for the file system to be released after the player has been killed
+	/bin/sleep 0.1
+	delete_song
+	# Wait for the file system to acknowledge the deletion
+	/bin/sleep 0.1
+	# Don't allow a new delete button press until released
+	DELETE_BUTTON_RELEASED="0"
 	fi
 
 ## [ DETECT NEXT BUTTON RELEASED ---->>>> ALLOW A NEW NEXT BUTTON TO BE PRESSED ] ##
@@ -263,35 +252,24 @@ do
 	then
 	# Wait for the GPIO driver to rest
 	/bin/sleep 0.1
-	# Test again to make sure it is not noise
-		if [ `gpio read $NEXT_BUTTON_ADRESS` = 1 ]
-		then
-		# Wait for the GPIO driver to rest
-		/bin/sleep 0.1
-		NEXT_BUTTON_RELEASED="1"
-		fi
+	NEXT_BUTTON_RELEASED="1"
 	fi
 
 ## [ DETECT NEXT BUTTON WAS RELEASED AND IS PRESSED ---->>>  STOP PLAYER  ---->>>>  CURRENT SONG FINISHED SO NEXT ] ##
 
+	# As bash is slow no button debounce check, make the button debounce in hardware
 	if [ $NEXT_BUTTON_RELEASED -eq "1" ] && [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
 	then
 	# Wait for the GPIO driver to rest
 	/bin/sleep 0.1
-	# Test again to make sure it is not noise (already checked released)
-		if [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
-		then
-		# Wait for the GPIO driver to rest
-		/bin/sleep 0.1
-		# Killing the player like a song ending will allow a next song
-		killall $PLAYERKILL
-		# Wait for the file system to be released after the player has been killed
-		/bin/sleep 0.1
-		mpv /run/next.wav
-		/bin/sleep 0.1
-		# Don't allow a new next button press until released
-		NEXT_BUTTON_RELEASED="0"
-		fi
+	# Killing the player like a song ending will allow a next song
+	killall $PLAYERKILL
+	# Wait for the file system to be released after the player has been killed
+	/bin/sleep 0.1
+	#mpv /run/next.wav
+	#/bin/sleep 0.1
+	# Don't allow a new next button press until released
+	NEXT_BUTTON_RELEASED="0"
 	fi
 
 ## [ DETECT PLAYER STOPPED (song end/next or killed by delete) ---->>>>  NEXT SONG ] ##
