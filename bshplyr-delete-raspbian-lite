@@ -138,10 +138,10 @@ delete_song ()
 #### [ BOOTING WITH SYSTEMD ] ####
 
 # Lite boot delay (no x server)
-/bin/sleep 10
+/bin/sleep 12
 
 # Heavy boot delay (x server)
-#/bin/sleep 15
+#/bin/sleep 18
 
 # Check two times for each (detect possible unwanted noise) that pull up resistors for buttons work, exit if not
 if [ `gpio read $DELETE_BUTTON_ADRESS` = 0 ]
