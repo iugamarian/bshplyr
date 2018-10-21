@@ -14,9 +14,11 @@
 ### psmisc - use "killall" to kill the player or bshplyr-delete - in Raspbian needs other expression than in Arch
 ### wiringpi - use "gpio" to sense pressing the delete button
 ### espeak - use "espeak" to report that the song is deleted
+### omxplayer - accelerated decoding libraries, video
+### mpv - very good as audio player on a low resources board
 ### This are the commands to install them:
 apt-get update
-apt-get install -y alsa-utils psmisc wiringpi espeak omxplayer
+apt-get install -y alsa-utils psmisc wiringpi espeak omxplayer mpv
 ### Create files and folders:
 echo "1" > /root/saved
 #echo "Next:" > /root/nextpressed
