@@ -167,7 +167,6 @@ then
 	fi
 fi
 
-mount /dev/sda1 /root/music
 
 #### [ INCREASE BATTERY LIFE FOR B MODEL, THIS DISABLES USB AND LAN CHIP ] ####
 
