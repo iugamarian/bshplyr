@@ -57,7 +57,7 @@ if [ -f "$PLAYLIST" ]
 then
 	PLAYLIST_LASTLINE=`cat "$PLAYLIST" | wc -l`
 else
-	espeak -a 600 -p 0 -w /run/nofound.wav "No songs found, exiting! No songs found, exiting!"
+	espeak -a 500 -p 0 -w /run/nofound.wav "No songs found, exiting! No songs found, exiting!"
 	/bin/sleep 0.1
 	mpv /run/nofound.wav
 	exit
@@ -65,7 +65,7 @@ fi
 # Tested and playlist can exist but have zero songs so avoid that too
 if [ "$PLAYLIST_LASTLINE" -lt "1" ]
 then
-	espeak -a 600 -p 0 -w /run/zerofound.wav "Zero songs found, exiting! Zero songs found, exiting!"
+	espeak -a 500 -p 0 -w /run/zerofound.wav "Zero songs found, exiting! Zero songs found, exiting!"
 	/bin/sleep 0.1
 	mpv /run/zerofound.wav
 	exit
@@ -156,7 +156,7 @@ then
 			if [ `gpio read $NEXT_BUTTON_ADRESS` = 0 ]
 			then
 				/bin/sleep 0.1
-				espeak -a 600 -p 0 -w /run/buttons.wav "Buttons pull up resistors not working properly, both buttons are seen as pressed, exiting."
+				espeak -a 500 -p 0 -w /run/buttons.wav "Buttons pull up resistors not working properly, both buttons are seen as pressed, exiting."
 				/bin/sleep 0.1
 				mpv /run/buttons.wav
 				/bin/sleep 0.1
@@ -182,14 +182,14 @@ mount /dev/sda1 /root/music
 generate_playlist
 
 # Only once at start specify status
-espeak -a 600 -p 0 -w /run/status.wav "I have found $PLAYLIST_LASTLINE songs, playing $PLAYLIST_RECENT_LINE."
+espeak -a 500 -p 0 -w /run/status.wav "I have found $PLAYLIST_LASTLINE songs, playing $PLAYLIST_RECENT_LINE."
 /bin/sleep 0.1
 mpv /run/status.wav
 
 # Sounds for delete and next
-espeak -a 600 -p 0 -w /run/deleted.wav "Deleted."
+espeak -a 500 -p 0 -w /run/deleted.wav "Deleted."
 /bin/sleep 0.1
-espeak -a 600 -p 0 -w /run/next.wav "Next."
+espeak -a 500 -p 0 -w /run/next.wav "Next."
 /bin/sleep 0.1
 
 #### [ SYNC DATA TO PROTECT AGAINST CORRUPTION FROM POWER LOSS ] ####
