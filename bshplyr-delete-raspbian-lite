@@ -199,6 +199,8 @@ espeak -a 500 -p 0 -w /run/next.wav "Next."
 #sync
 #/bin/sleep 0.1
 
+mkdir /tmp/currentsong
+
 #### [ CONTROL LOOP THAT REPEATS INFINETLY ] ####
 
 while true
@@ -214,9 +216,11 @@ do
 	/bin/sleep 0.1
 	sync
 	/bin/sleep 0.1
+	rm /tmp/currentsong/*
+	cp "$SONGFILE" /tmp/currentsong
 	# Starting the player, when " &" at the end, the script continues without waiting to finish command to the left
 	# --no-audio-display to avoid trying to show picture in audio file because error no X server, no play
-	"$PLAYERBIN" --start=60 --no-audio-display "$SONGFILE" &
+	"$PLAYERBIN" --start=60 --no-audio-display /tmp/currentsong/* &
 	# --vol -1000 reduces volume to aproximately 90%, required for bass not to go over in sound adapter
 	fi
 
@@ -231,7 +235,7 @@ do
 		DELETE_BUTTON_RELEASED="1"
 		fi
 	fi
-	
+
 ## [ DETECT DELETE BUTTON WAS RELEASED AND IS PRESSED ---->>>  STOP PLAYER  ---->>>>  DELETE THE UNWANTED SONG ] ##
 
 	# As bash is slow no button debounce check, make the button debounce in hardware
