@@ -1,7 +1,7 @@
 # bshplyr
 =======
 
-# bash service music player for arch on Raspberry Pi, no login, keyboard or monitor required, autostarts
+# bash service music player for Raspbian on Raspberry Pi, no login, keyboard or monitor required, autostarts
 
 Adapted for directory structure (just copy the folders with music in /root/music), creates lists only for .wav .flac .mp3 .ogg .mp4 thus avoiding other files like .m3u .jpg .txt
 
