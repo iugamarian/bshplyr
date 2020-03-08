@@ -1,0 +1,12 @@
+mkdir -p /root/music
+cd /root/music
+espeak -a 500 -p 0 -w /root/music/01x.wav "This is song number 1, lala lala. Yes indeed. Aha aha."
+espeak -a 500 -p 0 -w /root/music/02x.wav "This is song number 2, lala lala. Yes indeed. Aha aha."
+espeak -a 500 -p 0 -w /root/music/03x.wav "This is song number 3, lala lala. Yes indeed. Aha aha."
+espeak -a 500 -p 0 -w /root/music/04x.wav "This is song number 4, lala lala. Yes indeed. Aha aha."
+espeak -a 500 -p 0 -w /root/music/05x.wav "This is song number 5, lala lala. Yes indeed. Aha aha."
+espeak -a 500 -p 0 -w /root/music/06x.wav "This is song number 6, lala lala. Yes indeed. Aha aha."
+espeak -a 500 -p 0 -w /root/music/07x.wav "This is song number 7, lala lala. Yes indeed. Aha aha."
+espeak -a 500 -p 0 -w /root/music/08x.wav "This is song number 8, lala lala. Yes indeed. Aha aha."
+espeak -a 500 -p 0 -w /root/music/09x.wav "This is song number 9, lala lala. Yes indeed. Aha aha."
+sync
