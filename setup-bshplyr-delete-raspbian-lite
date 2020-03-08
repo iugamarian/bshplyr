@@ -18,7 +18,7 @@
 ### mpv - very good as audio player on a low resources board
 ### This are the commands to install them:
 apt-get update
-apt-get install -y alsa-utils psmisc wiringpi espeak omxplayer mpv
+apt-get install -y alsa-utils psmisc espeak mpv
 ### Create files and folders:
 echo "1" > /root/saved
 #echo "Next:" > /root/nextpressed
