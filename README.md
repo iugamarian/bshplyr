@@ -3,6 +3,20 @@
 
 # bash service music player for Raspbian on Raspberry Pi, no login, keyboard or monitor required, autostarts
 
+https://medium.com/@sidhantpanda/raspberry-pi-home-automation-with-google-assistant-integration-part-2-hardware-987e18e0a9c0
+
+http://raspberrypi.tomasgreno.cz/setup-gpio.html
+
+https://www.ics.com/blog/gpio-programming-using-sysfs-interface
+
+https://medium.com/coinmonks/controlling-raspberry-pi-gpio-pins-from-bash-scripts-traffic-lights-7ea0057c6a90
+
+WiringPi is deprecated. Updated all files to avoid WiringPi and use sysfs instead.
+
+Sysfs is faster but pull up resistors can't be set in the CPU.
+
+A resistor of about 100 kohm needs to be wired physically to 3.3V for each button for it to work.
+
 Adapted for directory structure (just copy the folders with music in /root/music), creates lists only for .wav .flac .mp3 .ogg .mp4 thus avoiding other files like .m3u .jpg .txt
 
 bshplyr-delete-raspbian-lite works on Raspbian Lite
