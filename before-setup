@@ -54,33 +54,33 @@ sed -i 's/rootwait/ipv6.disable=1 rootwait/g' /boot/cmdline.txt
 # https://raspberrypi.stackexchange.com/questions/1886/what-kernel-parameters-are-available-for-fixing-usb-problems
 # https://www.raspberrypi.org/forums/viewtopic.php?t=12097&start=425
 
-sed -i 's/sdhci-bcm2708.enable_llm=1 sdhci-bcm2708.sync_after_dma=0 smsc95xx.turbo_mode=N dwc_otg.lpm_enable=0/dwc_otg.lpm_enable=0/g' /boot/cmdline.txt
-sed -i 's/dwc_otg.lpm_enable=0/sdhci-bcm2708.enable_llm=1 sdhci-bcm2708.sync_after_dma=0 smsc95xx.turbo_mode=N dwc_otg.lpm_enable=0/g' /boot/cmdline.txt
+# sed -i 's/sdhci-bcm2708.enable_llm=1 sdhci-bcm2708.sync_after_dma=0 smsc95xx.turbo_mode=N dwc_otg.lpm_enable=0/dwc_otg.lpm_enable=0/g' /boot/cmdline.txt
+# sed -i 's/dwc_otg.lpm_enable=0/sdhci-bcm2708.enable_llm=1 sdhci-bcm2708.sync_after_dma=0 smsc95xx.turbo_mode=N dwc_otg.lpm_enable=0/g' /boot/cmdline.txt
 
 # Using 99- to apply after other .conf files enabled ipv6, not needed if cmdline.txt disables IPV6:
 
-#cat <<EOF > /etc/sysctl.d/99-rpi-disable-ipv6.conf
-#net.ipv6.conf.all.disable_ipv6 = 1
-#net.ipv6.conf.default.disable_ipv6 = 1
-#EOF
-#net.ipv6.conf.lo.disable_ipv6 = 1
-#net.ipv6.conf.eth0.disable_ipv6 = 1
-#net.ipv6.conf.[interface].disable_ipv6 = 1
+# cat <<EOF > /etc/sysctl.d/99-rpi-disable-ipv6.conf
+# net.ipv6.conf.all.disable_ipv6 = 1
+# net.ipv6.conf.default.disable_ipv6 = 1
+# EOF
+# net.ipv6.conf.lo.disable_ipv6 = 1
+# net.ipv6.conf.eth0.disable_ipv6 = 1
+# net.ipv6.conf.[interface].disable_ipv6 = 1
 
 # Disable internal sound card as it's very low quality (check how "Tiesto - Adagio for strings" sounds on it)
-cat <<EOF > /etc/modprobe.d/alsainternalsndoff.conf
-blacklist snd_bcm2835
-EOF
-#Disable pulseaudio to reduce sound arterfacts during playback
+# cat <<EOF > /etc/modprobe.d/alsainternalsndoff.conf
+# blacklist snd_bcm2835
+# EOF
+# Disable pulseaudio to reduce sound arterfacts during playback
 # https://wiki.archlinux.org/index.php/PulseAudio/Examples
-cat <<EOF > /etc/pulse/client.conf
-autospawn=no
-daemon-binary=/bin/true
-EOF
+# cat <<EOF > /etc/pulse/client.conf
+# autospawn=no
+# daemon-binary=/bin/true
+# EOF
 
 # Allow usb sound cards to work, avoid alsa errors
-sed -i 's/#options snd-usb-audio index=-2/options snd-usb-audio index=-2/g' /lib/modprobe.d/aliases.conf
-sed -i 's/options snd-usb-audio index=-2/#options snd-usb-audio index=-2/g' /lib/modprobe.d/aliases.conf
+# sed -i 's/#options snd-usb-audio index=-2/options snd-usb-audio index=-2/g' /lib/modprobe.d/aliases.conf
+# sed -i 's/options snd-usb-audio index=-2/#options snd-usb-audio index=-2/g' /lib/modprobe.d/aliases.conf
 
 # Remove /tmp in tmpfs if already in
 sed -i 's/\rtmpfs           \/tmp            tmpfs  nodev,nosuid,mode=1777     0 0//g' /etc/fstab
