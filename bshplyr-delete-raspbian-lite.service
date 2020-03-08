@@ -3,7 +3,7 @@ Description=systemd Unit to automatically start bshplyr
 # ammended [Install] section at the end as suggested in https://forums.opensuse.org/showthread.php/500207-Need-the-bluetooth-activated-at-boot-before-login
 Documentation=https://wiki.archlinux.org/index.php/Bluetooth_Keyboard
 ConditionPathExists=/usr/bin/bshplyr-delete-raspbian-lite
-ConditionPathExists=/usr/bin/gpio
+ConditionPathExists=/usr/bin/mpv
 
 [Service]
 Type=oneshot
