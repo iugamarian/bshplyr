@@ -61,9 +61,9 @@ then
 PLAYLIST_LASTLINE=`cat "$PLAYLIST" | wc -l`
 else
 espeak -a 500 -p 0 -w /run/notfound.wav "There is a problem, no songs found, exiting!"
-/bin/sleep 0.1
+/bin/sleep 0.02
 mpv --no-audio-display /run/notfound.wav
-/bin/sleep 0.1
+/bin/sleep 0.02
 mpv --no-audio-display /run/notfound.wav
 exit
 fi
@@ -71,9 +71,9 @@ fi
 if [ "$PLAYLIST_LASTLINE" -lt "1" ]
 then
 espeak -a 500 -p 0 -w /run/zerofound.wav "There is a problem, zero songs found, exiting!"
-/bin/sleep 0.1
+/bin/sleep 0.02
 mpv --no-audio-display /run/zerofound.wav
-/bin/sleep 0.1
+/bin/sleep 0.02
 mpv --no-audio-display /run/zerofound.wav
 exit
 fi
@@ -114,7 +114,7 @@ back_song ()
 # Decrease current song number by two so that next_song will use the previous song
 killall $PLAYERKILL
 # Wait for the file system to be released after the player has been killed
-/bin/sleep 0.05
+/bin/sleep 0.02
 mpv --no-audio-display /run/back.wav
 if [ "$PLAYLIST_RECENT_LINE" -eq  "1" ]
 then
@@ -146,7 +146,7 @@ fi
 # Will write changes to disk just before starting the player
 # Save playlist position
 echo "$PLAYLIST_RECENT_LINE" > "$PLAYLIST_SAVED_FILE"
-/bin/sleep 0.05
+/bin/sleep 0.02
 rm /run/current.wav
 espeak -a 500 -p 0 -w /run/current.wav "Playing $PLAYLIST_RECENT_LINE."
 mpv --no-audio-display /run/current.wav
@@ -162,9 +162,9 @@ delete_song ()
 
 killall $PLAYERKILL
 # Wait for the file system to be released after the player has been killed
-/bin/sleep 0.1
+/bin/sleep 0.02
 mpv --no-audio-display /run/deleted.wav
-/bin/sleep 0.1
+/bin/sleep 0.02
 rm "$SONGFILE"
 # http://www.yourownlinux.com/2015/04/sed-command-in-linux-delete-lines-from-file.html
 # http://stackoverflow.com/questions/5171901/sed-command-find-and-replace-in-file-and-overwrite-file-doesnt-work-it-empties
@@ -200,9 +200,9 @@ espeak -a 500 -p 0 -w /run/deleted.wav "Yes now deleted."
 #### [ SYNC DATA TO PROTECT AGAINST CORRUPTION FROM POWER LOSS ] ####
 
 # This is saving all changes done to disk by the boot process
-/bin/sleep 0.1
+/bin/sleep 0.02
 sync
-/bin/sleep 0.1
+/bin/sleep 0.02
 
 
 #### [ INCREASE BATTERY LIFE FOR PI 1 MODEL B, THIS DISABLES USB AND LAN CHIP ] ####
@@ -215,21 +215,21 @@ sync
 if [ -f "/sys/class/gpio/gpio$BACK_BUTTON_ADRESS/value" ]
 then
 # Wait for the GPIO driver to rest
-/bin/sleep 0.05
+/bin/sleep 0.02
 else
 echo $BACK_BUTTON_ADRESS > /sys/class/gpio/export
 # Wait for the GPIO driver to rest
-/bin/sleep 0.05
+/bin/sleep 0.02
 fi
 
 if [ -f "/sys/class/gpio/gpio$NEXT_BUTTON_ADRESS/value" ]
 then
 # Wait for the GPIO driver to rest
-/bin/sleep 0.05
+/bin/sleep 0.02
 else
 echo $NEXT_BUTTON_ADRESS > /sys/class/gpio/export
 # Wait for the GPIO driver to rest
-/bin/sleep 0.05
+/bin/sleep 0.02
 fi
 
 
@@ -244,7 +244,7 @@ BACK_BUTTON_VALUE="0"
 fi
 
 # Wait for the GPIO driver to rest
-/bin/sleep 0.05
+/bin/sleep 0.02
 
 ### [ READ NEXT BUTTON ] ###
 
@@ -255,7 +255,7 @@ NEXT_BUTTON_VALUE="0"
 fi
 
 # Wait for the GPIO driver to rest
-/bin/sleep 0.05
+/bin/sleep 0.02
 
 ### [ READ BACK BUTTON ] ###
 
@@ -266,7 +266,7 @@ BACK_BUTTON_VALUE="0"
 fi
 
 # Wait for the GPIO driver to rest
-/bin/sleep 0.05
+/bin/sleep 0.02
 
 ### [ READ NEXT BUTTON ] ###
 
@@ -277,14 +277,14 @@ NEXT_BUTTON_VALUE="0"
 fi
 
 # Wait for the GPIO driver to rest
-/bin/sleep 0.05
+/bin/sleep 0.02
 
 if [ $BACK_BUTTON_VALUE -eq "0" ] && [ $NEXT_BUTTON_VALUE -eq "0" ]
 then
 espeak -a 500 -p 0 -w /run/buttons.wav "There is a problem, both buttons are seen as pressed, the buttons pull up resistors not working properly, exiting."
-/bin/sleep 0.1
+/bin/sleep 0.02
 mpv --no-audio-display /run/buttons.wav
-/bin/sleep 0.1
+/bin/sleep 0.02
 mpv --no-audio-display /run/buttons.wav
 exit
 fi
@@ -301,16 +301,16 @@ generate_playlist
 
 # Only once at start specify status
 espeak -a 500 -p 0 -w /run/status.wav "I have found $PLAYLIST_LASTLINE songs, playing $PLAYLIST_RECENT_LINE."
-/bin/sleep 0.1
+/bin/sleep 0.02
 mpv --no-audio-display /run/status.wav
 
 
 #### [ SYNC DATA TO PROTECT AGAINST CORRUPTION FROM POWER LOSS ] ####
 
 # This is saving all changes done to disk by the systemd boot process
-#/bin/sleep 0.1
+#/bin/sleep 0.02
 #sync
-#/bin/sleep 0.1
+#/bin/sleep 0.02
 
 mkdir -p /run/currentsong
 
@@ -327,9 +327,9 @@ then
 # Determine the song by wanted line in the playlist (path and filename)
 SONGFILE=`cat "$PLAYLIST" | sed -n "$PLAYLIST_RECENT_LINE"p`
 # Write all changes to disk (before starting the player)
-/bin/sleep 0.05
+/bin/sleep 0.02
 sync
-/bin/sleep 0.05
+/bin/sleep 0.02
 rm /run/currentsong/*
 cp "$SONGFILE" /run/currentsong
 # Starting the player, when " &" at the end, the script continues without waiting to finish command to the left
@@ -338,7 +338,7 @@ cp "$SONGFILE" /run/currentsong
 # "$PLAYERBIN" --start=60 --no-audio-display /run/currentsong/* &
 # --vol -1000 reduces volume to aproximately 90%, required for bass not to go over in sound adapter
 # Allow time for the player to start up good (and be detected by test_player)
-/bin/sleep 0.5
+/bin/sleep 1
 # Inform that the player has been started once, test_player can check now
 START_PLAYER="0"
 fi
@@ -353,7 +353,7 @@ BACK_BUTTON_VALUE="0"
 fi
 
 # Wait for the GPIO driver to rest
-/bin/sleep 0.05
+/bin/sleep 0.02
 
 ### [ READ NEXT BUTTON ] ###
 
@@ -426,7 +426,7 @@ then
 NEXT_BUTTON_CONFIRMED="1"
 killall $PLAYERKILL
 # Wait for the file system to be released after the player has been killed
-/bin/sleep 0.05
+/bin/sleep 0.02
 mpv --no-audio-display /run/next.wav
 fi
 
@@ -452,6 +452,6 @@ fi
 
 # But be fast enough to sense the buttons and stopped player with snapiness
 
-sleep 0.05
+/bin/sleep 0.02
 
 done
