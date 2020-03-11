@@ -11,6 +11,8 @@ https://www.ics.com/blog/gpio-programming-using-sysfs-interface
 
 https://medium.com/coinmonks/controlling-raspberry-pi-gpio-pins-from-bash-scripts-traffic-lights-7ea0057c6a90
 
+https://elinux.org/R-Pi_Troubleshooting#Sound
+
 WiringPi is deprecated. Updated all files to avoid WiringPi and use sysfs instead.
 
 Sysfs is faster but pull up resistors can't be set in the CPU.
