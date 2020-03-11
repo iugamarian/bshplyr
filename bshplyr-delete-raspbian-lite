@@ -148,7 +148,7 @@ fi
 echo "$PLAYLIST_RECENT_LINE" > "$PLAYLIST_SAVED_FILE"
 /bin/sleep 0.02
 rm /run/current.wav
-espeak -a 500 -p 0 -w /run/current.wav "Playing $PLAYLIST_RECENT_LINE."
+espeak -a 500 -p 0 -w /run/current.wav "Player go playing $PLAYLIST_RECENT_LINE."
 mpv --no-audio-display /run/current.wav
 # Ask to start once the player, until it is started test_player is ignored
 START_PLAYER="1"
@@ -192,9 +192,9 @@ fi
 #/bin/sleep 60
 
 # Sounds for back, next and delete
-espeak -a 500 -p 0 -w /run/back.wav "Yes now back."
-espeak -a 500 -p 0 -w /run/next.wav "Yes now next."
-espeak -a 500 -p 0 -w /run/deleted.wav "Yes now deleted."
+espeak -a 500 -p 0 -w /run/back.wav "Button go now back."
+espeak -a 500 -p 0 -w /run/next.wav "Button go now next."
+espeak -a 500 -p 0 -w /run/deleted.wav "Button go now deleted."
 
 
 #### [ SYNC DATA TO PROTECT AGAINST CORRUPTION FROM POWER LOSS ] ####
@@ -300,7 +300,7 @@ mount /dev/sda1 /root/music
 generate_playlist
 
 # Only once at start specify status
-espeak -a 500 -p 0 -w /run/status.wav "I have found $PLAYLIST_LASTLINE songs, playing $PLAYLIST_RECENT_LINE."
+espeak -a 500 -p 0 -w /run/status.wav "Music, I have found $PLAYLIST_LASTLINE songs, playing $PLAYLIST_RECENT_LINE."
 /bin/sleep 0.02
 mpv --no-audio-display /run/status.wav
 
