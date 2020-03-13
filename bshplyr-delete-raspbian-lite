@@ -57,7 +57,7 @@ if [ -f "$PLAYLIST" ]
 then
 PLAYLIST_LASTLINE=`cat "$PLAYLIST" | wc -l`
 else
-espeak -a 500 -p 0 -w /run/notfound.wav "There is a problem, no songs found, exiting!"
+espeak -a 500 -p 0 -w /run/notfound.wav "Music, there is a problem, no songs found, exiting!"
 /bin/sleep 0.05
 mpv --no-audio-display /run/notfound.wav
 /bin/sleep 0.05
