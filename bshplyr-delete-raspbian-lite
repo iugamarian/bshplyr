@@ -67,7 +67,7 @@ fi
 # Tested and playlist can exist but have zero songs so avoid that too
 if [ "$PLAYLIST_LASTLINE" -lt "1" ]
 then
-espeak -a 500 -p 0 -w /run/zerofound.wav "There is a problem, zero songs found, exiting!"
+espeak -a 500 -p 0 -w /run/zerofound.wav "Music, there is a problem, zero songs found, exiting!"
 /bin/sleep 0.05
 mpv --no-audio-display /run/zerofound.wav
 /bin/sleep 0.05
