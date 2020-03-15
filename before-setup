@@ -29,7 +29,9 @@ systemctl enable getty@tty1.service
 
 # Disable IPV6 so that apt or apt-get does not hang when downloading
 
-sysctl -a | grep disable | grep ipv6
+# Best to do it in /boot/cmdline.txt
+
+# sysctl -a | grep disable | grep ipv6
 
 # Take result and put 1 instead of zero at end of each row
 
@@ -106,7 +108,9 @@ EOF
 # If those files are already there, they get rewritten by ">" , not added to like ">>" does, so no cancelling required.
 
 sync
-sleep 2
+sleep 3
+sync
+sleep 5
 
 # Load all configuration files manually:
 #sysctl --system
