@@ -206,6 +206,19 @@ sync
 
 #echo 0x0 > /sys/devices/platform/bcm2708_usb/buspower
 
+#### [ INCREASE BATTERY LIFE FOR PI 3 MODEL B, B+, THIS DISABLES USB AND LAN CHIP ] ####
+
+# https://forum.core-electronics.com.au/t/controlling-usb-power-with-raspberry-pi-or-arduino/3242/8
+# https://www.raspberrypi.org/forums/viewtopic.php?t=257144
+# https://community.octoprint.org/t/how-can-i-disable-the-usb-voltage-on-the-raspberry-pi-3b/3271/2
+# https://loginroot.com/power-off-and-on-usb-device-in-linux-ubuntu/
+# https://www.raspberrypi.org/forums/viewtopic.php?t=172313
+# https://gist.github.com/hfreire/32deb6be3791f15692feaa8954e954fe
+# https://askubuntu.com/questions/798040/how-to-unbind-bind-a-usb-device-as-normal-user
+# https://learn.pi-supply.com/make/how-to-save-power-on-your-raspberry-pi/
+
+# echo '1-1' |tee /sys/bus/usb/drivers/usb/unbind
+
 
 #### [ PREPARE SYSFS GPIO PINS IF NOT PREPARED ALREADY ] ####
 
