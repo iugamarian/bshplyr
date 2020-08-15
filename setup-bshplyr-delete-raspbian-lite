@@ -17,8 +17,8 @@
 ### omxplayer - accelerated decoding libraries, video
 ### mpv - very good as audio player on a low resources board
 ### This are the commands to install them:
-apt-get update
-apt-get install -y alsa-utils psmisc espeak mpv
+apt update
+apt install -y alsa-utils psmisc espeak-ng mpv
 ### Create files and folders:
 sleep 1
 sync
@@ -28,27 +28,56 @@ echo "1" > /root/saved
 # /root/music must contain music or movie files in folders or no folders
 mkdir -p /root/music
 mkdir -p /usr/bin
-mkdir -p /etc/systemd/system/
+#mkdir -p /etc/systemd/system/
 echo ""
 echo "Copying files."
 echo ""
 # The playlist is done at each boot by the script and the last song is remembered
 cp bshplyr-delete-raspbian-lite /usr/bin
-cp bshplyr-delete-raspbian-lite.service /etc/systemd/system/
+#cp bshplyr-delete-raspbian-lite.service /etc/systemd/system/
 chmod 775 /usr/bin/bshplyr-delete-raspbian-lite
-chmod 775 /etc/systemd/system/bshplyr-delete-raspbian-lite.service
-sleep 1
+# Using /etc/rc.local for starting the music player, Rpi OS has /etc/rc.local active
+cat <<EOF > /etc/rc.local
+#!/bin/sh -e
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+#
+# By default this script does nothing.
+
+# Wait for the CPU to rest and for the log files to finish writing.
+/bin/sleep 10
+# Print the IP address
+_IP=$(hostname -I) || true
+if [ "$_IP" ]; then
+  printf "My IP address is %s\n" "$_IP"
+fi
+# Start zram swap
+/usr/bin/zramims &
+# Start music player
+/usr/bin/bshplyr-delete-raspbian-lite &
 sync
-sleep 2
-echo "Reloading systemd."
-echo ""
-systemctl daemon-reload
-sleep 1
-sync
-sleep 2
-echo "Enabling bshplyr-delete-raspbian-lite service."
-echo ""
-systemctl enable bshplyr-delete-raspbian-lite
+exit 0
+EOF
+#chmod 775 /etc/systemd/system/bshplyr-delete-raspbian-lite.service
+#sleep 1
+#sync
+#sleep 2
+#echo "Reloading systemd."
+#echo ""
+#systemctl daemon-reload
+#sleep 1
+#sync
+#sleep 2
+#echo "Enabling bshplyr-delete-raspbian-lite service."
+#echo ""
+#systemctl enable bshplyr-delete-raspbian-lite
 sleep 1
 sync
 sleep 2
