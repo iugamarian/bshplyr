@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#!/bin/bash
-
 # INSTALL "ALSA-UTILS", "ESPEAK", "PSMISC, "MPV" BEFORE RUNNING THIS SCRIPT !
 
 # WIRINGPI IS DEPRECATED, USING SYSFS IN THE KERNEL, SYSFS CAN NOT ENABLE CPU PULL UP RESISTORS !
@@ -57,21 +55,21 @@ if [ -f "$PLAYLIST" ]
 then
 PLAYLIST_LASTLINE=`cat "$PLAYLIST" | wc -l`
 else
-espeak -a 500 -p 0 -w /run/notfound.wav "Music, there is a problem, no songs found, exiting!"
+espeak-ng -a 500 -p 0 -w /run/notfound.wav "Music, there is a problem, no songs found, exiting!"
 /bin/sleep 0.05
-mpv --no-audio-display /run/notfound.wav
+mpv --no-terminal --no-audio-display /run/notfound.wav
 /bin/sleep 0.05
-mpv --no-audio-display /run/notfound.wav
+mpv --no-terminal --no-audio-display /run/notfound.wav
 exit
 fi
 # Tested and playlist can exist but have zero songs so avoid that too
 if [ "$PLAYLIST_LASTLINE" -lt "1" ]
 then
-espeak -a 500 -p 0 -w /run/zerofound.wav "Music, there is a problem, zero songs found, exiting!"
+espeak-ng -a 500 -p 0 -w /run/zerofound.wav "Music, there is a problem, zero songs found, exiting!"
 /bin/sleep 0.05
-mpv --no-audio-display /run/zerofound.wav
+mpv --no-terminal --no-audio-display /run/zerofound.wav
 /bin/sleep 0.05
-mpv --no-audio-display /run/zerofound.wav
+mpv --no-terminal --no-audio-display /run/zerofound.wav
 exit
 fi
 
@@ -112,7 +110,7 @@ back_song ()
 killall $PLAYERKILL
 # Wait for the file system to be released after the player has been killed
 /bin/sleep 0.05
-mpv --no-audio-display /run/back.wav
+mpv --no-terminal --no-audio-display /run/back.wav
 if [ "$PLAYLIST_RECENT_LINE" -eq  "1" ]
 then
 PLAYLIST_RECENT_LINE="$PLAYLIST_LASTLINE"
@@ -145,8 +143,8 @@ fi
 echo "$PLAYLIST_RECENT_LINE" > "$PLAYLIST_SAVED_FILE"
 /bin/sleep 0.05
 rm /run/current.wav
-espeak -a 500 -p 0 -w /run/current.wav "Player go playing $PLAYLIST_RECENT_LINE."
-mpv --no-audio-display /run/current.wav
+espeak-ng -a 500 -p 0 -w /run/current.wav "Player go playing $PLAYLIST_RECENT_LINE."
+mpv --no-terminal --no-audio-display /run/current.wav
 # Ask to start once the player, until it is started test_player is ignored
 START_PLAYER="1"
 
@@ -160,7 +158,7 @@ delete_song ()
 killall $PLAYERKILL
 # Wait for the file system to be released after the player has been killed
 /bin/sleep 0.05
-mpv --no-audio-display /run/deleted.wav
+mpv --no-terminal --no-audio-display /run/deleted.wav
 /bin/sleep 0.05
 rm "$SONGFILE"
 # http://www.yourownlinux.com/2015/04/sed-command-in-linux-delete-lines-from-file.html
@@ -183,15 +181,15 @@ fi
 #### [ BOOTING WITH SYSTEMD ] ####
 
 # Lite boot delay (no x server)
-/bin/sleep 30
+/bin/sleep 20
 
 # Heavy boot delay (x server)
 #/bin/sleep 60
 
 # Sounds for back, next and delete
-espeak -a 500 -p 0 -w /run/back.wav "Button go now back."
-espeak -a 500 -p 0 -w /run/next.wav "Button go now next."
-espeak -a 500 -p 0 -w /run/deleted.wav "Button go now deleted."
+espeak-ng -a 500 -p 0 -w /run/back.wav "Button go now back."
+espeak-ng -a 500 -p 0 -w /run/next.wav "Button go now next."
+espeak-ng -a 500 -p 0 -w /run/deleted.wav "Button go now deleted."
 
 
 #### [ SYNC DATA TO PROTECT AGAINST CORRUPTION FROM POWER LOSS ] ####
@@ -291,11 +289,11 @@ fi
 
 if [ $BACK_BUTTON_VALUE -eq "0" ] && [ $NEXT_BUTTON_VALUE -eq "0" ]
 then
-espeak -a 500 -p 0 -w /run/buttons.wav "Music, there is a problem, both buttons are seen as pressed, the buttons pull up resistors not working properly, exiting."
+espeak-ng -a 500 -p 0 -w /run/buttons.wav "Music, there is a problem, both buttons are seen as pressed, the buttons pull up resistors not working properly, exiting."
 /bin/sleep 0.05
-mpv --no-audio-display /run/buttons.wav
+mpv --no-terminal --no-audio-display /run/buttons.wav
 /bin/sleep 0.05
-mpv --no-audio-display /run/buttons.wav
+mpv --no-terminal --no-audio-display /run/buttons.wav
 exit
 fi
 
@@ -304,7 +302,7 @@ fi
 
 # If there is USB stick or sdcard in USB adapter this will mount it, if not /root/music is from internal storage
 # If the stick does not mount it does not have partitions, only filesystem. Avoided
-mount /dev/sda1 /root/music
+# mount /dev/sda1 /root/music
 # Allow time for reading the filesystem after a possible mount
 /bin/sleep 1
 
@@ -312,9 +310,9 @@ mount /dev/sda1 /root/music
 generate_playlist
 
 # Only once at start specify status
-espeak -a 500 -p 0 -w /run/status.wav "Music, I have found $PLAYLIST_LASTLINE songs, playing $PLAYLIST_RECENT_LINE."
+espeak-ng -a 500 -p 0 -w /run/status.wav "Music, I have found $PLAYLIST_LASTLINE songs, playing $PLAYLIST_RECENT_LINE."
 /bin/sleep 0.05
-mpv --no-audio-display /run/status.wav
+mpv --no-terminal --no-audio-display /run/status.wav
 
 
 #### [ SYNC DATA TO PROTECT AGAINST CORRUPTION FROM POWER LOSS ] ####
@@ -345,9 +343,9 @@ sync
 rm /run/currentsong/*
 cp "$SONGFILE" /run/currentsong
 # Starting the player, when " &" at the end, the script continues without waiting to finish command to the left
-# --no-audio-display to avoid trying to show picture in audio file because error no X server, no play
-"$PLAYERBIN" --no-audio-display /run/currentsong/* &
-# "$PLAYERBIN" --start=60 --no-audio-display /run/currentsong/* &
+# --no-terminal --no-audio-display to avoid trying to show picture in audio file because error no X server, no play
+"$PLAYERBIN" --no-terminal --no-audio-display /run/currentsong/* &
+# "$PLAYERBIN" --start=60 --no-terminal --no-audio-display /run/currentsong/* &
 # --vol -1000 reduces volume to aproximately 90%, required for bass not to go over in sound adapter
 # Allow time for the player to start up good (and be detected by test_player)
 /bin/sleep 1
@@ -439,7 +437,7 @@ NEXT_BUTTON_CONFIRMED="1"
 killall $PLAYERKILL
 # Wait for the file system to be released after the player has been killed
 /bin/sleep 0.05
-mpv --no-audio-display /run/next.wav
+mpv --no-terminal --no-audio-display /run/next.wav
 fi
 
 if [ $DELETE_BUTTON_CONFIRMED -eq "0" ]
