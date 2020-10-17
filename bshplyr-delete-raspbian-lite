@@ -55,7 +55,7 @@ if [ -f "$PLAYLIST" ]
 then
 PLAYLIST_LASTLINE=`cat "$PLAYLIST" | wc -l`
 else
-espeak-ng -a 500 -p 0 -w /run/notfound.wav "Music, there is a problem, no songs found, exiting!"
+espeak-ng -a 400 -p 0 -w /run/notfound.wav "Music, there is a problem, no songs found, exiting!"
 /bin/sleep 0.05
 mpv --no-terminal --no-audio-display /run/notfound.wav
 /bin/sleep 0.05
@@ -65,7 +65,7 @@ fi
 # Tested and playlist can exist but have zero songs so avoid that too
 if [ "$PLAYLIST_LASTLINE" -lt "1" ]
 then
-espeak-ng -a 500 -p 0 -w /run/zerofound.wav "Music, there is a problem, zero songs found, exiting!"
+espeak-ng -a 400 -p 0 -w /run/zerofound.wav "Music, there is a problem, zero songs found, exiting!"
 /bin/sleep 0.05
 mpv --no-terminal --no-audio-display /run/zerofound.wav
 /bin/sleep 0.05
@@ -143,7 +143,7 @@ fi
 echo "$PLAYLIST_RECENT_LINE" > "$PLAYLIST_SAVED_FILE"
 /bin/sleep 0.05
 rm /run/current.wav
-espeak-ng -a 500 -p 0 -w /run/current.wav "Player go playing $PLAYLIST_RECENT_LINE."
+espeak-ng -a 400 -p 0 -w /run/current.wav "Player go playing $PLAYLIST_RECENT_LINE."
 mpv --no-terminal --no-audio-display /run/current.wav
 # Ask to start once the player, until it is started test_player is ignored
 START_PLAYER="1"
@@ -187,9 +187,9 @@ fi
 #/bin/sleep 60
 
 # Sounds for back, next and delete
-espeak-ng -a 500 -p 0 -w /run/back.wav "Button go now back."
-espeak-ng -a 500 -p 0 -w /run/next.wav "Button go now next."
-espeak-ng -a 500 -p 0 -w /run/deleted.wav "Button go now deleted."
+espeak-ng -a 400 -p 0 -w /run/back.wav "Button go now back."
+espeak-ng -a 400 -p 0 -w /run/next.wav "Button go now next."
+espeak-ng -a 400 -p 0 -w /run/deleted.wav "Button go now deleted."
 
 
 #### [ SYNC DATA TO PROTECT AGAINST CORRUPTION FROM POWER LOSS ] ####
@@ -289,7 +289,7 @@ fi
 
 if [ $BACK_BUTTON_VALUE -eq "0" ] && [ $NEXT_BUTTON_VALUE -eq "0" ]
 then
-espeak-ng -a 500 -p 0 -w /run/buttons.wav "Music, there is a problem, both buttons are seen as pressed, the buttons pull up resistors not working properly, exiting."
+espeak-ng -a 400 -p 0 -w /run/buttons.wav "Music, there is a problem, both buttons are seen as pressed, the buttons pull up resistors not working properly, exiting."
 /bin/sleep 0.05
 mpv --no-terminal --no-audio-display /run/buttons.wav
 /bin/sleep 0.05
@@ -310,7 +310,7 @@ fi
 generate_playlist
 
 # Only once at start specify status
-espeak-ng -a 500 -p 0 -w /run/status.wav "Music, I have found $PLAYLIST_LASTLINE songs, playing $PLAYLIST_RECENT_LINE."
+espeak-ng -a 400 -p 0 -w /run/status.wav "Music, I have found $PLAYLIST_LASTLINE songs, playing $PLAYLIST_RECENT_LINE."
 /bin/sleep 0.05
 mpv --no-terminal --no-audio-display /run/status.wav
 
