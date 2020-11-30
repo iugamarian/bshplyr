@@ -184,7 +184,7 @@ fi
 /bin/sleep 2
 espeak-ng -a 400 -p 0 -w /run/started.wav "Started."
 /bin/sleep 0.05
-mpv --no-terminal --no-audio-display /run/zerofound.wav
+mpv --no-terminal --no-audio-display /run/started.wav
 
 # Delay so that the system finishes booting so that more CPU resources are available when working
 
