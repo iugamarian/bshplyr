@@ -1,0 +1,475 @@
+#!/bin/bash
+
+# INSTALL "ALSA-UTILS", "ESPEAK", "PSMISC, "MPV" BEFORE RUNNING THIS SCRIPT !
+
+# WIRINGPI IS DEPRECATED, USING SYSFS IN THE KERNEL, SYSFS CAN NOT ENABLE CPU PULL UP RESISTORS !
+
+# OBLIGATORY PHYSICAL PULL UP TO 3.3 V RESISTORS OF ABOUT 100KOHM REQUIRED FOR WORKING BUTTONS !
+
+# IF "BACK" AND "NEXT" ARE BOTH PRESSED THIS IS "DELETE" SELECTION
+
+### [ SELECT GPIO PINS FOR THE BUTTONS, DISABLE [UART]/I2C/SPI ON THE SELECTED GPIO PINS ] ###
+
+BACK_BUTTON_ADRESS="14"
+NEXT_BUTTON_ADRESS="15"
+
+### [ OTHER VARIABLES FOR THIS SCRIPT ] ###
+
+BACK_BUTTON_DEBOUNCE="3"
+NEXT_BUTTON_DEBOUNCE="3"
+DELETE_BUTTON_DEBOUNCE="3"
+BACK_BUTTON_VALUE="1"
+NEXT_BUTTON_VALUE="1"
+BACK_BUTTON_CONFIRMED="1"
+NEXT_BUTTON_CONFIRMED="1"
+DELETE_BUTTON_CONFIRMED="1"
+PLAYERBIN="/usr/bin/mpv"
+PLAYERTEST="mpv"
+PLAYERKILL="mpv"
+PLAYLIST_SAVED_FILE="/root/saved"
+SONGFILE=""	# path to the song to be played
+START_PLAYER="1"
+DETECT_PLAYER="0"
+#PATH_MOD="/500gbdate/pi/celtic-dance-by-riverdance-mp3/"
+PATH_MOD="/root/music/"
+PLAYLIST="/run/playlist" # /tmp on Raspbian is not a tmpfs but /run is
+PLAYLIST_RECENT_LINE=$[$(cat "$PLAYLIST_SAVED_FILE")]
+PLAYLIST_LASTLINE="0"
+
+### [ FUNCTIONS, THEY WILL RUN ONLY IF CALLED BY NAME ] ###
+
+generate_playlist ()
+
+{
+
+# /tmp on Arch is not always a tmpfs so do few writes (call this rarely)
+rm "$PLAYLIST"
+find "$PATH_MOD" -iname "*.wav" -exec echo {} >> "$PLAYLIST" \;
+find "$PATH_MOD" -iname "*.flac" -exec echo {} >> "$PLAYLIST" \;
+find "$PATH_MOD" -iname "*.mp3" -exec echo {} >> "$PLAYLIST" \;
+find "$PATH_MOD" -iname "*.ogg" -exec echo {} >> "$PLAYLIST" \;
+find "$PATH_MOD" -iname "*.mp4" -exec echo {} >> "$PLAYLIST" \;
+#ls -1 "$PATH_MOD" > "$PLAYLIST"
+# Detect if music has been found, if not exit
+if [ -f "$PLAYLIST" ]
+then
+PLAYLIST_LASTLINE=`cat "$PLAYLIST" | wc -l`
+else
+espeak-ng -a 400 -p 0 -w /run/notfound.wav "Music, there is a problem, no songs found, exiting!"
+/bin/sleep 0.05
+mpv --no-terminal --no-audio-display /run/notfound.wav
+/bin/sleep 0.05
+mpv --no-terminal --no-audio-display /run/notfound.wav
+exit
+fi
+# Tested and playlist can exist but have zero songs so avoid that too
+if [ "$PLAYLIST_LASTLINE" -lt "1" ]
+then
+espeak-ng -a 400 -p 0 -w /run/zerofound.wav "Music, there is a problem, zero songs found, exiting!"
+/bin/sleep 0.05
+mpv --no-terminal --no-audio-display /run/zerofound.wav
+/bin/sleep 0.05
+mpv --no-terminal --no-audio-display /run/zerofound.wav
+exit
+fi
+
+# Sort playlist
+sort "$PLAYLIST" > /run/tempplstff
+rm "$PLAYLIST" 
+mv /run/tempplstff "$PLAYLIST"
+
+
+# Avoid a saved song number larger than the number of songs
+if [ "$PLAYLIST_RECENT_LINE" -gt "$PLAYLIST_LASTLINE" ]
+then
+PLAYLIST_RECENT_LINE="1"
+fi
+
+}
+
+test_player ()
+
+{
+
+ps -ef | grep -v grep | grep -q $PLAYERTEST
+if [ $? -ne 0 ]
+then
+DETECT_PLAYER="0"
+else
+DETECT_PLAYER="1" 
+fi
+
+}
+
+
+back_song ()
+
+{
+
+# Decrease current song number by two so that next_song will use the previous song
+killall $PLAYERKILL
+# Wait for the file system to be released after the player has been killed
+/bin/sleep 0.05
+mpv --no-terminal --no-audio-display /run/back.wav
+if [ "$PLAYLIST_RECENT_LINE" -eq  "1" ]
+then
+PLAYLIST_RECENT_LINE="$PLAYLIST_LASTLINE"
+else
+PLAYLIST_RECENT_LINE=$((PLAYLIST_RECENT_LINE-1))
+fi
+if [ "$PLAYLIST_RECENT_LINE" -eq  "1" ]
+then
+PLAYLIST_RECENT_LINE="$PLAYLIST_LASTLINE"
+else
+PLAYLIST_RECENT_LINE=$((PLAYLIST_RECENT_LINE-1))
+fi
+# test_player will detect the player is not runing and a next_song will be run
+
+}
+
+next_song ()
+
+{
+
+# This will run once after the song is finished but also after back and delete
+if [ "$PLAYLIST_RECENT_LINE" -eq "$PLAYLIST_LASTLINE" ]
+then
+PLAYLIST_RECENT_LINE="1"
+else
+PLAYLIST_RECENT_LINE=$((PLAYLIST_RECENT_LINE+1))
+fi
+# Will write changes to disk just before starting the player
+# Save playlist position
+echo "$PLAYLIST_RECENT_LINE" > "$PLAYLIST_SAVED_FILE"
+/bin/sleep 0.05
+rm /run/current.wav
+espeak-ng -a 400 -p 0 -w /run/current.wav "Playing $PLAYLIST_RECENT_LINE."
+mpv --no-terminal --no-audio-display /run/current.wav
+# Ask to start once the player, until it is started test_player is ignored
+START_PLAYER="1"
+
+}
+
+
+delete_song ()
+
+{
+
+killall $PLAYERKILL
+# Wait for the file system to be released after the player has been killed
+/bin/sleep 0.05
+mpv --no-terminal --no-audio-display /run/deleted.wav
+/bin/sleep 0.05
+rm "$SONGFILE"
+# http://www.yourownlinux.com/2015/04/sed-command-in-linux-delete-lines-from-file.html
+# http://stackoverflow.com/questions/5171901/sed-command-find-and-replace-in-file-and-overwrite-file-doesnt-work-it-empties
+sed -i "$PLAYLIST_RECENT_LINE d" $PLAYLIST
+# The complete list is smaller by one song so decrease last line before current song
+PLAYLIST_LASTLINE=$((PLAYLIST_LASTLINE-1))
+# Decrease current song number by one so that next_song will use the same song number
+if [ "$PLAYLIST_RECENT_LINE" -eq  "1" ]
+then
+PLAYLIST_RECENT_LINE="$PLAYLIST_LASTLINE"
+else
+PLAYLIST_RECENT_LINE=$((PLAYLIST_RECENT_LINE-1))
+fi
+# test_player will detect the player is not runing and a next_song will be run
+
+}
+
+
+#### [ BOOTING WITH SYSTEMD ] ####
+
+# Announce started
+/bin/sleep 2
+espeak-ng -a 400 -p 0 -w /run/started.wav "Started."
+/bin/sleep 0.05
+mpv --no-terminal --no-audio-display /run/zerofound.wav
+
+# Delay so that the system finishes booting so that more CPU resources are available when working
+
+# Lite boot delay (no x server)
+/bin/sleep 8
+
+# Heavy boot delay (x server)
+#/bin/sleep 60
+
+# Sounds for back, next and delete
+espeak-ng -a 400 -p 0 -w /run/back.wav "Back."
+espeak-ng -a 400 -p 0 -w /run/next.wav "Next."
+espeak-ng -a 400 -p 0 -w /run/deleted.wav "Deleted."
+
+
+#### [ SYNC DATA TO PROTECT AGAINST CORRUPTION FROM POWER LOSS ] ####
+
+# This is saving all changes done to disk by the boot process
+/bin/sleep 0.05
+sync
+/bin/sleep 0.05
+
+
+#### [ INCREASE BATTERY LIFE FOR PI 1 MODEL B, THIS DISABLES USB AND LAN CHIP ] ####
+
+#echo 0x0 > /sys/devices/platform/bcm2708_usb/buspower
+
+#### [ INCREASE BATTERY LIFE FOR PI 3 MODEL B, B+, THIS DISABLES USB AND LAN CHIP ] ####
+
+# https://forum.core-electronics.com.au/t/controlling-usb-power-with-raspberry-pi-or-arduino/3242/8
+# https://www.raspberrypi.org/forums/viewtopic.php?t=257144
+# https://community.octoprint.org/t/how-can-i-disable-the-usb-voltage-on-the-raspberry-pi-3b/3271/2
+# https://loginroot.com/power-off-and-on-usb-device-in-linux-ubuntu/
+# https://www.raspberrypi.org/forums/viewtopic.php?t=172313
+# https://gist.github.com/hfreire/32deb6be3791f15692feaa8954e954fe
+# https://askubuntu.com/questions/798040/how-to-unbind-bind-a-usb-device-as-normal-user
+# https://learn.pi-supply.com/make/how-to-save-power-on-your-raspberry-pi/
+
+echo '1-1' |tee /sys/bus/usb/drivers/usb/unbind
+
+
+#### [ PREPARE SYSFS GPIO PINS IF NOT PREPARED ALREADY ] ####
+
+if [ -f "/sys/class/gpio/gpio$BACK_BUTTON_ADRESS/value" ]
+then
+# Wait for the GPIO driver to rest
+/bin/sleep 0.05
+else
+echo $BACK_BUTTON_ADRESS > /sys/class/gpio/export
+# Wait for the GPIO driver to rest
+/bin/sleep 0.05
+fi
+
+if [ -f "/sys/class/gpio/gpio$NEXT_BUTTON_ADRESS/value" ]
+then
+# Wait for the GPIO driver to rest
+/bin/sleep 0.05
+else
+echo $NEXT_BUTTON_ADRESS > /sys/class/gpio/export
+# Wait for the GPIO driver to rest
+/bin/sleep 0.05
+fi
+
+
+# Check two times for each (detect possible unwanted noise) that pull up resistors for buttons work, exit if not
+
+### [ READ BACK BUTTON ] ###
+
+cd /sys/class/gpio/gpio$BACK_BUTTON_ADRESS
+if [ `cat value` = 0 ]
+then
+BACK_BUTTON_VALUE="0"
+fi
+
+# Wait for the GPIO driver to rest
+/bin/sleep 0.05
+
+### [ READ NEXT BUTTON ] ###
+
+cd /sys/class/gpio/gpio$NEXT_BUTTON_ADRESS
+if [ `cat value` = 0 ]
+then
+NEXT_BUTTON_VALUE="0"
+fi
+
+# Wait for the GPIO driver to rest
+/bin/sleep 0.05
+
+### [ READ BACK BUTTON ] ###
+
+cd /sys/class/gpio/gpio$BACK_BUTTON_ADRESS
+if [ `cat value` = 0 ]
+then
+BACK_BUTTON_VALUE="0"
+fi
+
+# Wait for the GPIO driver to rest
+/bin/sleep 0.05
+
+### [ READ NEXT BUTTON ] ###
+
+cd /sys/class/gpio/gpio$NEXT_BUTTON_ADRESS
+if [ `cat value` = 0 ]
+then
+NEXT_BUTTON_VALUE="0"
+fi
+
+# Wait for the GPIO driver to rest
+/bin/sleep 0.05
+
+if [ $BACK_BUTTON_VALUE -eq "0" ] && [ $NEXT_BUTTON_VALUE -eq "0" ]
+then
+espeak-ng -a 400 -p 0 -w /run/buttons.wav "Music, there is a problem, both buttons are seen as pressed, the buttons pull up resistors not working properly, exiting."
+/bin/sleep 0.05
+mpv --no-terminal --no-audio-display /run/buttons.wav
+/bin/sleep 0.05
+mpv --no-terminal --no-audio-display /run/buttons.wav
+exit
+fi
+
+
+#### [ PLAYLIST ] ####
+
+# If there is USB stick or sdcard in USB adapter this will mount it, if not /root/music is from internal storage
+# If the stick does not mount it does not have partitions, only filesystem. Avoided
+# mount /dev/sda1 /root/music
+# Allow time for reading the filesystem after a possible mount
+/bin/sleep 1
+
+# This will not also be called after a song delete to make the program faster, avoided by using sed to delete in the playlist
+generate_playlist
+
+# Only once at start specify status
+espeak-ng -a 400 -p 0 -w /run/status.wav "Music, I have found $PLAYLIST_LASTLINE songs, playing $PLAYLIST_RECENT_LINE."
+/bin/sleep 0.05
+mpv --no-terminal --no-audio-display /run/status.wav
+
+
+#### [ SYNC DATA TO PROTECT AGAINST CORRUPTION FROM POWER LOSS ] ####
+
+# This is saving all changes done to disk by the systemd boot process
+#/bin/sleep 0.05
+#sync
+#/bin/sleep 0.05
+
+mkdir -p /run/currentsong
+
+#### [ CONTROL LOOP THAT REPEATS INFINETLY ] ####
+
+while true
+
+do
+
+### [ START THE PLAYER ] ###
+
+if [ $START_PLAYER -eq "1" ]
+then
+# Determine the song by wanted line in the playlist (path and filename)
+SONGFILE=`cat "$PLAYLIST" | sed -n "$PLAYLIST_RECENT_LINE"p`
+# Write all changes to disk (before starting the player)
+/bin/sleep 0.05
+sync
+/bin/sleep 0.05
+rm /run/currentsong/*
+cp "$SONGFILE" /run/currentsong
+# Starting the player, when " &" at the end, the script continues without waiting to finish command to the left
+# --no-terminal --no-audio-display to avoid trying to show picture in audio file because error no X server, no play
+"$PLAYERBIN" --no-terminal --no-audio-display /run/currentsong/* &
+# "$PLAYERBIN" --start=60 --no-terminal --no-audio-display /run/currentsong/* &
+# --vol -1000 reduces volume to aproximately 90%, required for bass not to go over in sound adapter
+# Allow time for the player to start up good (and be detected by test_player)
+/bin/sleep 1
+# Inform that the player has been started once, test_player can check now
+START_PLAYER="0"
+fi
+
+### [ READ BACK BUTTON ] ###
+
+BACK_BUTTON_VALUE="1"
+cd /sys/class/gpio/gpio$BACK_BUTTON_ADRESS
+if [ `cat value` = 0 ]
+then
+BACK_BUTTON_VALUE="0"
+fi
+
+# Wait for the GPIO driver to rest
+/bin/sleep 0.05
+
+### [ READ NEXT BUTTON ] ###
+
+NEXT_BUTTON_VALUE="1"
+cd /sys/class/gpio/gpio$NEXT_BUTTON_ADRESS
+if [ `cat value` = 0 ]
+then
+NEXT_BUTTON_VALUE="0"
+fi
+
+### [ DEBOUNCE THE BUTTONS ] ###
+
+if [ $BACK_BUTTON_VALUE -eq "0" ] && [ $NEXT_BUTTON_VALUE -eq "1" ]
+then
+BACK_BUTTON_DEBOUNCE=$((BACK_BUTTON_DEBOUNCE-1))
+fi
+
+if [ $BACK_BUTTON_VALUE -eq "1" ] && [ $NEXT_BUTTON_VALUE -eq "0" ]
+then
+NEXT_BUTTON_DEBOUNCE=$((NEXT_BUTTON_DEBOUNCE-1))
+fi
+
+if [ $BACK_BUTTON_VALUE -eq "0" ] && [ $NEXT_BUTTON_VALUE -eq "0" ]
+then
+DELETE_BUTTON_DEBOUNCE=$((DELETE_BUTTON_DEBOUNCE-1))
+fi
+
+### [ CONFIRM THE BUTTONS AFTER DEBOUNCE ] ###
+
+if [ $BACK_BUTTON_DEBOUNCE -eq "0" ]
+then
+BACK_BUTTON_DEBOUNCE="3"
+NEXT_BUTTON_DEBOUNCE="3"
+DELETE_BUTTON_DEBOUNCE="3"
+BACK_BUTTON_CONFIRMED="0"
+NEXT_BUTTON_CONFIRMED="1"
+DELETE_BUTTON_CONFIRMED="1"
+fi
+
+if [ $NEXT_BUTTON_DEBOUNCE -eq "0" ]
+then
+BACK_BUTTON_DEBOUNCE="3"
+NEXT_BUTTON_DEBOUNCE="3"
+DELETE_BUTTON_DEBOUNCE="3"
+BACK_BUTTON_CONFIRMED="1"
+NEXT_BUTTON_CONFIRMED="0"
+DELETE_BUTTON_CONFIRMED="1"
+fi
+
+if [ $DELETE_BUTTON_DEBOUNCE -eq "0" ]
+then
+BACK_BUTTON_DEBOUNCE="3"
+NEXT_BUTTON_DEBOUNCE="3"
+DELETE_BUTTON_DEBOUNCE="3"
+BACK_BUTTON_CONFIRMED="1"
+NEXT_BUTTON_CONFIRMED="1"
+DELETE_BUTTON_CONFIRMED="0"
+fi
+
+### [ ACTION FOR THE CONFIRMED BUTTONS ] ###
+
+if [ $BACK_BUTTON_CONFIRMED -eq "0" ]
+then
+BACK_BUTTON_CONFIRMED="1"
+back_song
+fi
+
+if [ $NEXT_BUTTON_CONFIRMED -eq "0" ]
+then
+NEXT_BUTTON_CONFIRMED="1"
+killall $PLAYERKILL
+# Wait for the file system to be released after the player has been killed
+/bin/sleep 0.05
+mpv --no-terminal --no-audio-display /run/next.wav
+fi
+
+if [ $DELETE_BUTTON_CONFIRMED -eq "0" ]
+then
+DELETE_BUTTON_CONFIRMED="1"
+delete_song
+fi
+
+### [ DETECT PLAYER STOPPED (song end/back/next/delete) ---->>>>  NEXT SONG ] ###
+
+# First check that the player has been started once already
+if [ $START_PLAYER -eq "0" ]
+then
+# Now check that the started player has finished playing or has been killed by back, next or delete
+test_player
+	if [ $DETECT_PLAYER -eq "0" ]
+	then
+	next_song
+	fi
+fi
+### [ GO SLOWER THROUGH THE INFINITE LOOP IF NO CHANGES ] ###
+
+# But be fast enough to sense the buttons and stopped player with snapiness
+
+/bin/sleep 0.05
+
+done
