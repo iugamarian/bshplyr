@@ -1,40 +1,22 @@
 # bshplyr
 =======
 
-# bash service music player for Raspbian on Raspberry Pi, no login, keyboard or monitor required, autostarts
+Bash service music player for Raspbian on Raspberry Pi, no login, keyboard or monitor required, autostarts
 
-https://medium.com/@sidhantpanda/raspberry-pi-home-automation-with-google-assistant-integration-part-2-hardware-987e18e0a9c0
 
-http://raspberrypi.tomasgreno.cz/setup-gpio.html
+# Updated for the end of the year 2020
 
-https://www.ics.com/blog/gpio-programming-using-sysfs-interface
+Added volume control option when pressing the back button longer
 
-https://medium.com/coinmonks/controlling-raspberry-pi-gpio-pins-from-bash-scripts-traffic-lights-7ea0057c6a90
+Added safely power off option when pressing the next button longer
 
-https://elinux.org/R-Pi_Troubleshooting#Sound
+Reduced the warning messages and error messages done by the script.
 
-WiringPi is deprecated. Updated all files to avoid WiringPi and use sysfs instead.
-
-Sysfs is faster but pull up resistors can't be set in the CPU.
-
-A resistor of about 100 kohm needs to be wired physically to 3.3V for each button for it to work.
-
-Adapted for directory structure (just copy the folders with music in /root/music), creates lists only for .wav .flac .mp3 .ogg .mp4 thus avoiding other files like .m3u .jpg .txt
-
-bshplyr-delete-raspbian-lite works on Raspbian Lite
-
-On Raspbian Lite:
-
-starting the player with /usr/bin/omxplayer instead of /usr/bin/omxplayer.bin
-
-testing the player needs omxplayer instead of omxplayer.bin
-
-killall needs omxplayer.bin instead of /usr/bin/omxplayer.bin
-
+Please install with the setup files ending ending in 2020.
 
 # Install on Raspbian Lite
 
-# On another computer prepare bshplyr (apt and apt-get hang on download with IPV6 if ISP only has IPV4):
+On another computer prepare bshplyr (apt and apt-get hang on download with IPV6 if ISP only has IPV4):
 
 sudo apt-get install -y git
 
@@ -42,17 +24,21 @@ git clone https://github.com/iugamarian/bshplyr/
 
 cd bshplyr
 
-chmod +x before-setup
+chmod +x before-setup-2020
 
-chmod +x setup-bshplyr-delete-raspbian-lite
+chmod +x setup-2020
 
-# Copy bshplyr to /root in Raspbian Lite and in there install it:
+Copy bshplyr to /root in Raspbian Lite and in there install it:
 
 sudo -s
 
-./before-setup
+./before-setup-2020
 
-./setup-bshplyr-delete-raspbian-lite
+The system will reboot.
+
+sudo -s
+
+./setup-2020
 
 exit
 
@@ -75,4 +61,4 @@ exit
 
 
 # TODO:
-write the program in c, still calling omxplayer or mpv
+write the program in c, still calling mpv
