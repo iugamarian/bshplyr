@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Check to see if running as root
+
+echo -e "\nChecking for root."
+if [ `id -u` != 0 ]; then
+    echo "Not root."
+    echo -e "Need to be run as root.\n"
+    echo " Try 'sudo sh before-setup' as a user. Exiting."
+    echo ""
+    exit 1
+else
+    echo "Root."
+fi
+
+# It seems that not much needs to be done before setup at the end of the year 2020.
+
+# Many issues have been fixed.
+
+apt-get update && apt-get upgrade -y && sync
+
+reboot
