@@ -1,0 +1,67 @@
+#!/bin/bash
+### The setup can be simpler at the end of the year 2020. Now using only /etc/rc.local to start at boot.
+### Prepare a fresh Raspbian Lite install, which uses less card space and boots faster.
+### Edit /boot/config.txt for sound over HDMI and/or removing white noise, if you want a DVI monitor to
+### work you need to have analog sound over the 3,5 mm jack by setting hdmi_drive=1 and commenting with
+### a "#" hdmi_force_edid_audio=1 and before that you need to set a resolution, I use 1280 x 1024 @ 60Hz:
+####### hdmi_group=2
+####### hdmi_mode=35
+####### hdmi_drive=2
+####### hdmi_force_edid_audio=1
+####### hdmi_force_hotplug=1
+### Install programs required by bshplyr-delete-raspbian-lite that are not installed by default in Rasbian Lite:
+### espeak-ng - use "espeak" to report that the song is deleted
+### mpv - very good as audio player on a low resources board
+### This are the commands to install them:
+apt update
+apt install -y espeak-ng mpv
+### Create files and folders:
+sleep 1
+sync
+sleep 2
+echo "1" > /root/savedsong
+echo "70" > /root/volumelevel
+mkdir -p /root/music
+mkdir -p /usr/bin
+#mkdir -p /etc/systemd/system/
+echo ""
+echo "Copying files."
+echo ""
+# The playlist is done at each boot by the script and the last song is remembered
+cp bshplyr-delete-raspbian-lite /usr/bin
+chmod +x /usr/bin/bshplyr-delete-raspbian-lite
+# Using /etc/rc.local for starting the music player, Rpi OS has /etc/rc.local active
+cat <<EOF > /etc/rc.local
+#!/bin/sh -e
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+#
+# By default this script does nothing.
+
+# Print the IP address
+_IP=$(hostname -I) || true
+if [ "$_IP" ]; then
+  printf "My IP address is %s\n" "$_IP"
+fi
+/usr/bin/bshplyr-delete-raspbian-lite &
+exit 0
+EOF
+chmod +x /etc/rc.local
+sleep 1
+sync
+sleep 2
+echo "Done. You can copy some music in /root/music and start listening after boot."
+echo ""
+##################################################################################
+# Take sdhc card to abother computer, sudo copy music to mounted /root/music, put back in your
+# Raspberry PI and only plug your stereo headphone/speaker jack and power, with at least
+# GPIO pin 17 ready to pull to 3.3v with 10kohm for shutting down safely
+# To be portable use a laptop battery witch provides at least a day autonomy through a GPS car charger
+# to power the Raspberry Pi and disable USB/LAN chip (uncomment battery section in bshplyr for model B).
