@@ -1,0 +1,10 @@
+#!/bin/bash
+# Use this if booting from a flash drive root or from a dramless ssd to improve boot time
+# If "Storage=volatile", will be stored only in memory, below /run/log/journal hierarchy
+# If "Storage=none", will not be stored, all logs ignored, good for low ram and ssd
+# If "Seal=no", Forward Secure Sealing (FSS) is disabled for the journal storage, needed
+# for the Storage=volatile or Storage=none option to stop using the persistent storage
+mkdir -p /etc/systemd/journald.conf.d
+echo "[Journal]" > /etc/systemd/journald.conf.d/20-disable-journald.conf
+echo "Storage=none" >> /etc/systemd/journald.conf.d/20-disable-journald.conf
+echo "Seal=no" >> /etc/systemd/journald.conf.d/20-disable-journald.conf
