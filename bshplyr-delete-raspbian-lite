@@ -106,19 +106,12 @@ fi
 }
 
 
-back_song ()
+back_song_half ()
 
 {
 
-# Decrease current song number by two so that next_song will use the previous song
-# Wait for the file system to be released after the player has been killed
-/bin/sleep 0.05
-if [ "$PLAYLIST_RECENT_LINE" -eq  "1" ]
-then
-PLAYLIST_RECENT_LINE="$PLAYLIST_LASTLINE"
-else
-PLAYLIST_RECENT_LINE=$((PLAYLIST_RECENT_LINE-1))
-fi
+# Decrease current song number by one to play the same song next time (after adjusting the volume)
+# and two calls are needed for next_song to play the previous song (adjust volume not selected)
 if [ "$PLAYLIST_RECENT_LINE" -eq  "1" ]
 then
 PLAYLIST_RECENT_LINE="$PLAYLIST_LASTLINE"
@@ -183,7 +176,7 @@ ADJUST_VOLUME_REQUEST="0"
 
 # https://unix.stackexchange.com/questions/21089/how-to-use-command-line-to-change-volume
 
-while [ "$ADJUST_VOLUME_REQUEST" -lt 10 ]
+while [ "$ADJUST_VOLUME_REQUEST" -lt 6 ]
 
 do
 
@@ -589,8 +582,10 @@ check_adjust_volume_request
 	if [ "$ADJUST_VOLUME_REQUEST" -gt 1 ]
 	then
 	ADJUST_VOLUME_REQUEST="0"
+	back_song_half
 	else
-	back_song
+	back_song_half
+	back_song_half
 	fi
 fi
 
