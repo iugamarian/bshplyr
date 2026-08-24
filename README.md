@@ -4,7 +4,9 @@
 Bash service music player for Raspbian on Raspberry Pi, no login, keyboard or monitor required, autostarts
 
 
-# Updated for the end of the year 2020
+# Updated for the end of the year 2026
+
+Fixed some small errors with ai help from ollama, qwen3.8, opencode - now it is snappier
 
 Added volume control option when pressing the back button longer
 
