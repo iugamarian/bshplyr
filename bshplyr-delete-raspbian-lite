@@ -15,11 +15,13 @@ NEXT_BUTTON_ADRESS="15"
 
 ### [ OTHER VARIABLES FOR THIS SCRIPT ] ###
 
-BACK_BUTTON_DEBOUNCE="3"
-NEXT_BUTTON_DEBOUNCE="3"
-DELETE_BUTTON_DEBOUNCE="3"
+BACK_BUTTON_DEBOUNCE="4"	# using a little different debounce values to drastically reduce the chance of two debounces reaching 0 in the same time
+NEXT_BUTTON_DEBOUNCE="5"	# using a little different debounce values to drastically reduce the chance of two debounces reaching 0 in the same time
+DELETE_BUTTON_DEBOUNCE="6"	# using a little different debounce values to drastically reduce the chance of two debounces reaching 0 in the same time
 BACK_BUTTON_VALUE="1"
 NEXT_BUTTON_VALUE="1"
+PREV_BACK_VALUE="1"
+PREV_NEXT_VALUE="1"
 BACK_BUTTON_CONFIRMED="1"
 NEXT_BUTTON_CONFIRMED="1"
 POWER_OFF_REQUEST="0"
@@ -36,9 +38,10 @@ DETECT_PLAYER="0"
 #PATH_MOD="/500gbdate/pi/celtic-dance-by-riverdance-mp3/"
 PATH_MOD="/root/music/"
 PLAYLIST="/run/playlist" # /tmp on Raspbian is not a tmpfs but /run is
-PLAYLIST_RECENT_LINE=$[$(cat "$PLAYLIST_SAVED_FILE")]
-VOLUME_LEVEL=$[$(cat "$VOLUME_SAVED_FILE")]
+PLAYLIST_RECENT_LINE=$(cat "$PLAYLIST_SAVED_FILE")
+VOLUME_LEVEL=$(cat "$VOLUME_SAVED_FILE")
 PLAYLIST_LASTLINE="0"
+
 
 ### [ FUNCTIONS, THEY WILL RUN ONLY IF CALLED BY NAME ] ###
 
@@ -47,7 +50,10 @@ generate_playlist ()
 {
 
 # /tmp on Arch is not always a tmpfs so do few writes (call this rarely)
+if [ -f $PLAYLIST ]
+then
 rm "$PLAYLIST"
+fi
 find "$PATH_MOD" -iname "*.wav" -exec echo {} >> "$PLAYLIST" \;
 find "$PATH_MOD" -iname "*.flac" -exec echo {} >> "$PLAYLIST" \;
 find "$PATH_MOD" -iname "*.mp3" -exec echo {} >> "$PLAYLIST" \;
@@ -55,7 +61,7 @@ find "$PATH_MOD" -iname "*.ogg" -exec echo {} >> "$PLAYLIST" \;
 find "$PATH_MOD" -iname "*.mp4" -exec echo {} >> "$PLAYLIST" \;
 #ls -1 "$PATH_MOD" > "$PLAYLIST"
 # Detect if music has been found, if not exit
-if [ -f "$PLAYLIST" ]
+if [ -f $PLAYLIST ]
 then
 PLAYLIST_LASTLINE=`cat "$PLAYLIST" | wc -l`
 else
@@ -87,6 +93,8 @@ mv /run/tempplstff "$PLAYLIST"
 if [ "$PLAYLIST_RECENT_LINE" -gt "$PLAYLIST_LASTLINE" ]
 then
 PLAYLIST_RECENT_LINE="1"
+echo "$PLAYLIST_RECENT_LINE" > "$PLAYLIST_SAVED_FILE"
+sync
 fi
 
 }
@@ -102,7 +110,6 @@ DETECT_PLAYER="0"
 else
 DETECT_PLAYER="1"
 fi
-
 }
 
 
@@ -119,7 +126,6 @@ else
 PLAYLIST_RECENT_LINE=$((PLAYLIST_RECENT_LINE-1))
 fi
 # test_player will detect the player is not runing and a next_song will be run
-
 }
 
 
@@ -230,12 +236,14 @@ fi
 echo "$PLAYLIST_RECENT_LINE" > "$PLAYLIST_SAVED_FILE"
 /bin/sleep 0.05
 sync
+if [ -f /run/current.wav ]
+then
 rm /run/current.wav
+fi
 espeak-ng -a 400 -p 0 -w /run/current.wav "Playing $PLAYLIST_RECENT_LINE."
 mpv --no-terminal --no-config --no-audio-display /run/current.wav
 # Ask to start once the player, until it is started test_player is ignored
 START_PLAYER="1"
-
 }
 
 
@@ -284,8 +292,9 @@ fi
 delete_song ()
 
 {
-
 killall $PLAYERKILL
+# pkill -f "mpv .*currentsong" # !!!
+
 # Wait for the file system to be released after the player has been killed
 /bin/sleep 0.05
 mpv --no-terminal --no-config --no-audio-display /run/deleted.wav
@@ -312,7 +321,7 @@ fi
 
 # Wait for system resources to not be overloaded from the ongoing boot process
 
-/bin/sleep 5
+/bin/sleep 10
 
 # Announce started, this is for making the first sound after boot, sometimes the first sound is choppy
 
@@ -323,7 +332,7 @@ mpv --no-terminal --no-config --no-audio-display /run/started.wav
 # Delay so that the system finishes booting so that more CPU resources are available when working
 
 # Lite boot delay (no x server)
-/bin/sleep 3
+/bin/sleep 5
 
 # Heavy boot delay (x server)
 #/bin/sleep 60
@@ -365,7 +374,7 @@ sync
 # https://askubuntu.com/questions/798040/how-to-unbind-bind-a-usb-device-as-normal-user
 # https://learn.pi-supply.com/make/how-to-save-power-on-your-raspberry-pi/
 
-#echo '1-1' |tee /sys/bus/usb/drivers/usb/unbind
+echo '1-1' |tee /sys/bus/usb/drivers/usb/unbind
 
 
 #### [ PREPARE SYSFS GPIO PINS IF NOT PREPARED ALREADY ] ####
@@ -439,7 +448,7 @@ fi
 
 if [ $BACK_BUTTON_VALUE -eq "0" ] && [ $NEXT_BUTTON_VALUE -eq "0" ]
 then
-espeak-ng -a 400 -p 0 -w /run/buttons.wav "The music program, there is a problem, both buttons are seen as pressed, the buttons pull up resistors not working properly, exiting."
+espeak-ng -a 400 -p 0 -w /run/buttons.wav "The music program, there is a problem, both buttons are seen as pressed, probably the buttons pull up resistors not working properly, exiting."
 /bin/sleep 0.05
 mpv --no-terminal --no-config --no-audio-display /run/buttons.wav
 /bin/sleep 0.05
@@ -490,6 +499,7 @@ sync
 /bin/sleep 0.05
 rm /run/currentsong/*
 cp "$SONGFILE" /run/currentsong
+# ln -sf "$SONGFILE" /run/currentsong/current # !!!
 # Starting the player, when " &" at the end, the script continues without waiting to finish command to the left
 # --no-terminal --no-config --no-audio-display to avoid trying to show picture in audio file because error no X server, no play
 "$PLAYERBIN" --no-terminal --no-config --no-audio-display /run/currentsong/* &
@@ -524,28 +534,45 @@ fi
 
 ### [ DEBOUNCE THE BUTTONS ] ###
 
-if [ $BACK_BUTTON_VALUE -eq "0" ] && [ $NEXT_BUTTON_VALUE -eq "1" ]
+if [ $PREV_BACK_VALUE -eq "0" ] && [ $PREV_NEXT_VALUE -eq "1" ] && [ $BACK_BUTTON_VALUE -eq "0" ] && [ $NEXT_BUTTON_VALUE -eq "1" ]
 then
 BACK_BUTTON_DEBOUNCE=$((BACK_BUTTON_DEBOUNCE-1))
 fi
 
-if [ $BACK_BUTTON_VALUE -eq "1" ] && [ $NEXT_BUTTON_VALUE -eq "0" ]
+if [ $PREV_BACK_VALUE -eq "1" ] && [ $PREV_NEXT_VALUE -eq "0" ] && [ $BACK_BUTTON_VALUE -eq "1" ] && [ $NEXT_BUTTON_VALUE -eq "0" ]
 then
 NEXT_BUTTON_DEBOUNCE=$((NEXT_BUTTON_DEBOUNCE-1))
 fi
 
-if [ $BACK_BUTTON_VALUE -eq "0" ] && [ $NEXT_BUTTON_VALUE -eq "0" ]
+if [ $PREV_BACK_VALUE -eq "0" ] && [ $PREV_NEXT_VALUE -eq "0" ] && [ $BACK_BUTTON_VALUE -eq "0" ] && [ $NEXT_BUTTON_VALUE -eq "0" ]
 then
 DELETE_BUTTON_DEBOUNCE=$((DELETE_BUTTON_DEBOUNCE-1))
 fi
 
-### [ CONFIRM THE BUTTONS AFTER DEBOUNCE ] ###
+# Any rising slope immediately resets the debounce to the maximum value, no check for previous value - debounce on 0 values using previous values, reset debounce immediately on any 1 values
+
+if [ $BACK_BUTTON_VALUE -eq "1" ]
+then
+BACK_BUTTON_DEBOUNCE="4"
+fi
+
+if [ $NEXT_BUTTON_VALUE -eq "1" ]
+then
+NEXT_BUTTON_DEBOUNCE="5"
+fi
+
+if [ $BACK_BUTTON_VALUE -eq "1" ] && [ $NEXT_BUTTON_VALUE -eq "1" ]
+then
+DELETE_BUTTON_DEBOUNCE="6"
+fi
+
+### [ CONFIRM THE BUTTONS AFTER DEBOUNCE AND RESET ALL DEBOUNCES ] ###
 
 if [ $BACK_BUTTON_DEBOUNCE -eq "0" ]
 then
-BACK_BUTTON_DEBOUNCE="3"
-NEXT_BUTTON_DEBOUNCE="3"
-DELETE_BUTTON_DEBOUNCE="3"
+BACK_BUTTON_DEBOUNCE="4"
+NEXT_BUTTON_DEBOUNCE="5"
+DELETE_BUTTON_DEBOUNCE="6"
 BACK_BUTTON_CONFIRMED="0"
 NEXT_BUTTON_CONFIRMED="1"
 DELETE_BUTTON_CONFIRMED="1"
@@ -553,9 +580,9 @@ fi
 
 if [ $NEXT_BUTTON_DEBOUNCE -eq "0" ]
 then
-BACK_BUTTON_DEBOUNCE="3"
-NEXT_BUTTON_DEBOUNCE="3"
-DELETE_BUTTON_DEBOUNCE="3"
+BACK_BUTTON_DEBOUNCE="4"
+NEXT_BUTTON_DEBOUNCE="5"
+DELETE_BUTTON_DEBOUNCE="6"
 BACK_BUTTON_CONFIRMED="1"
 NEXT_BUTTON_CONFIRMED="0"
 DELETE_BUTTON_CONFIRMED="1"
@@ -563,9 +590,9 @@ fi
 
 if [ $DELETE_BUTTON_DEBOUNCE -eq "0" ]
 then
-BACK_BUTTON_DEBOUNCE="3"
-NEXT_BUTTON_DEBOUNCE="3"
-DELETE_BUTTON_DEBOUNCE="3"
+BACK_BUTTON_DEBOUNCE="4"
+NEXT_BUTTON_DEBOUNCE="5"
+DELETE_BUTTON_DEBOUNCE="6"
 BACK_BUTTON_CONFIRMED="1"
 NEXT_BUTTON_CONFIRMED="1"
 DELETE_BUTTON_CONFIRMED="0"
@@ -627,5 +654,8 @@ fi
 # But be fast enough to sense the buttons and stopped player with snapiness
 
 /bin/sleep 0.05
+
+PREV_BACK_VALUE=$BACK_BUTTON_VALUE
+PREV_NEXT_VALUE=$NEXT_BUTTON_VALUE
 
 done
